@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: wedding
+      POSTGRES_PASSWORD: wedding
+      POSTGRES_DB: wedding_songs
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wedding -d wedding_songs"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: wedding
+      PGPASSWORD: wedding
+      PGDATABASE: wedding_songs
+      EVENT_NAME: ${EVENT_NAME:-The Wedding}
+      EVENT_DATE: ${EVENT_DATE:-}
+      # Stable across restarts, or every guest silently loses their votes.
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      SPOTIFY_OFFLINE: ${SPOTIFY_OFFLINE:-0}
+      BLOCK_EXPLICIT: ${BLOCK_EXPLICIT:-0}
+      # Local compose is plain HTTP; the reverse proxy on the VPS terminates TLS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-0}
+      SEED_DEMO: ${SEED_DEMO:-}
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:

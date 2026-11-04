@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="hero">
+  <p class="eyebrow">{{ event.name }}</p>
+  <h1>Request a song</h1>
+  <p class="sub">Put in what you want to hear, then upvote the ones you like.
+    The DJ watches the top of this list.</p>
+</header>
+
+{% if not event.requests_open %}
+  <p class="notice">Requests are closed right now — but you can still upvote.</p>
+{% endif %}
+
+<section class="search-card" {% if not event.requests_open %}hidden{% endif %}>
+  <label class="field">
+    <span>Search for a song</span>
+    <input id="q" type="search" autocomplete="off" placeholder="Song title or artist"
+           aria-label="Search for a song">
+  </label>
+  <label class="field">
+    <span>Your name <em>(optional)</em></span>
+    <input id="name" type="text" maxlength="60" autocomplete="name" placeholder="So we know who to thank">
+  </label>
+  <ul id="results" class="results" hidden></ul>
+  <p id="search-msg" class="msg" hidden></p>
+  {% if not spotify_live %}
+    <p class="hint">Demo catalog — add Spotify credentials to search the real thing.</p>
+  {% endif %}
+</section>
+
+<p id="toast" class="toast" hidden role="status"></p>
+
+<section>
+  <h2 class="board-title">On the list</h2>
+  <ol id="board" class="board">
+    {% for r in requests %}
+      <li class="row {{ 'played' if r.status == 'played' }}" data-id="{{ r.id }}">
+        <div class="art" {% if r.artwork_url %}style="background-image:url('{{ r.artwork_url }}')"{% endif %}></div>
+        <div class="meta">
+          <p class="title">{{ r.title }}</p>
+          <p class="artist">{{ r.artist }}{% if r.duration_ms %} · {{ r.duration_ms | duration }}{% endif %}</p>
+          {% if r.requester_name %}<p class="by">asked for by {{ r.requester_name }}</p>{% endif %}
+          {% if r.status == 'played' %}<p class="by">played ✓</p>{% endif %}
+        </div>
+        <button class="vote {{ 'voted' if r.voted }}" data-id="{{ r.id }}"
+                {% if r.voted or r.status == 'played' or not event.voting_open %}disabled{% endif %}
+                aria-label="Upvote {{ r.title }}">
+          <span class="chev">▲</span>
+          <span class="count">{{ r.votes }}</span>
+        </button>
+      </li>
+    {% else %}
+      <li class="empty">Nothing yet — be the first.</li>
+    {% endfor %}
+  </ol>
+</section>
+
+<footer class="foot">
+  <p>One vote per song, one vote every {{ (event.vote_cooldown_seconds / 60) | round | int }} minutes.</p>
+</footer>
+{% endblock %}
+
+{% block scripts %}<script src="/static/board.js"></script>{% endblock %}
