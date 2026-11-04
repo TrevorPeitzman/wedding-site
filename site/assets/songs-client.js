@@ -308,7 +308,16 @@
   KT.songsClient = function () {
     if (client) return client;
     var cfg = window.KT_CONFIG || {};
-    if (!(cfg.supabaseUrl && cfg.supabaseAnonKey)) return (client = demoClient());
+    // ?demo=1 forces demo mode for this tab (local UI work, rehearsals),
+    // even when Supabase is configured. ?demo=0 turns it back off.
+    var demo = false;
+    try {
+      var flag = new URLSearchParams(location.search).get('demo');
+      if (flag === '1') sessionStorage.setItem('kt-demo', '1');
+      if (flag === '0') sessionStorage.removeItem('kt-demo');
+      demo = sessionStorage.getItem('kt-demo') === '1';
+    } catch (e) {}
+    if (demo || !(cfg.supabaseUrl && cfg.supabaseAnonKey)) return (client = demoClient());
     if (window.supabase) return (client = liveClient(cfg));
     // Configured, but the Supabase library didn't load (blocked CDN, bad
     // signal). Never fall back to the demo here: guests would think their

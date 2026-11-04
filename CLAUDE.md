@@ -59,8 +59,9 @@ wedding-song-requests/      original FastAPI prototype (reference only)
 
 - Preview: `python3 -m http.server 8000 -d site` → http://localhost:8000.
   Links are root-absolute (`/schedule/`), so serve `site/` as the web root.
-- With `assets/config.js` blank, the song board and DJ view run in **demo
-  mode** (localStorage, demo catalog, any DJ key). Use it for UI work.
+- `assets/config.js` points at the live project. Add `?demo=1` to any song
+  page URL for **demo mode** in that tab (localStorage, demo catalog, any DJ
+  key; `?demo=0` to leave it). Use it for UI work and rehearsals.
 - Rehearse the night: `?now=2026-11-21T18:10` (Pacific) on any URL; it also
   drives timed release.
 - **Feature switches:** every page links features with `data-feature="<name>"`
@@ -134,9 +135,12 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Rules ported to Postgres functions with SQL tests; Spotify Edge Function;
   guest board and DJ view rebuilt on the design system; demo mode.
 - ✅ Workflows: Pages deploy, SQL tests, function deploy. `DEPLOY.md`.
-- ☐ Supabase project + GitHub integration (`DEPLOY.md`, `supabase/README.md`).
-- ☐ Fill `site/assets/config.js`; enable Pages; DNS for wedding.peitzman.net.
-- ☐ Try the Edge Function locally (`supabase functions serve`) before deploy.
+- ✅ Supabase project live: migrations via the GitHub integration, DJ key set,
+  `songs` function deployed, `site/assets/config.js` filled (legacy anon JWT
+  key on purpose; see the comment there).
+- ☐ Pages + DNS for wedding.peitzman.net (Pages workflow is running).
+- ☐ First live test from a phone: a search, a request, a vote, the DJ view.
+  If search only finds ~22 classics, the Spotify secrets aren't set.
 - ☐ DJ walkthrough (see wedding-song-requests/DESIGN.md "Things to ask him").
 
 ### 3. Details live (by Nov 10)
