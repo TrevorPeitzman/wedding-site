@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/assets/ds/components.css">
   <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/songs.css">
+  <link rel="stylesheet" href="/assets/camera.css">
   <link rel="stylesheet" href="/assets/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
   <script src="/assets/site.js" defer></script>
@@ -103,6 +104,26 @@
               <button class="kt-btn kt-btn-secondary" type="button" id="release">Release photos now</button>
             </div>
           </form>
+        </div>
+      </section>
+
+      <section class="kt-card" aria-labelledby="rehearsal-title">
+        <p class="kt-card-eyebrow">Before the night</p>
+        <h2 class="kt-card-title" id="rehearsal-title">Rehearsal</h2>
+        <div class="kt-card-body stack">
+          <p>Test passes work like real ones, but their shots can be reset and their photos never reach the gallery. Open a link on a phone (or show it as a QR) to rehearse the camera, the song board and the Wallet card.</p>
+          <ol class="cam-shots" id="test-passes"></ol>
+          <dl class="kt-details" id="rehearsal-stats"></dl>
+        </div>
+        <div class="kt-card-actions">
+          <button class="kt-btn kt-btn-secondary" type="button" id="make-tests">Make 3 test passes</button>
+        </div>
+        <div class="stack adm-danger">
+          <p class="kt-label">Clean slate for the night</p>
+          <div class="adm-row">
+            <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="delete-tests">Delete test passes</button>
+            <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="clear-songs">Clear song board</button>
+          </div>
         </div>
       </section>
 

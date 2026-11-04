@@ -12,3 +12,10 @@
 .adm-state.is-off { color: var(--danger); }
 .adm-times { display: grid; grid-template-columns: repeat(auto-fit, minmax(13em, 1fr)); gap: var(--space-4); }
 .adm-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
+
+.adm-danger { border-top: 1px solid var(--rule); padding-top: var(--space-4); }
+.adm-danger .kt-btn-quiet { color: var(--danger); }
+.adm-pass { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); }
+.adm-pass a { overflow-wrap: anywhere; font-size: 14px; }
+.adm-pass .adm-row { grid-column: 1 / -1; justify-content: flex-start; }
+.adm-danger .kt-btn { white-space: normal; text-align: left; }

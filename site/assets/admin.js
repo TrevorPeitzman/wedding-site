@@ -119,7 +119,7 @@
   function load() {
     if (!key) { showKeyForm(); return Promise.resolve(); }
     return api.admin.features(key).then(function (d) {
-      data = d; $('key-form').hidden = true; $('admin').hidden = false; render();
+      data = d; $('key-form').hidden = true; $('admin').hidden = false; render(); loadRehearsal();
       $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }).catch(function (err) {
       if (err.code === 'not_organizer') {
@@ -174,6 +174,59 @@
       .catch(function (err) { toast(err.message, false); });
   });
 
-  setInterval(function () { if (!document.hidden && key && !document.querySelector('#admin :focus')) load(); }, 30000);
+  /* ----------------------------------------------------------- rehearsal -- */
+  var SITE = 'https://wedding.peitzman.net';
+  function renderRehearsal(r) {
+    var list = r.test_passes || [];
+    $('test-passes').innerHTML = list.length ? list.map(function (t) {
+      var link = (location.origin.indexOf('localhost') >= 0 ? location.origin : SITE) + '/p/?pass=' + t.token;
+      return '<li class="adm-pass"><span class="cam-shot-name">' + esc(t.name) + '</span>' +
+        '<span class="cam-state">' + t.shots_used + ' shot' + (t.shots_used === 1 ? '' : 's') + ' · ' +
+        t.phones + ' phone' + (t.phones === 1 ? '' : 's') + '</span>' +
+        '<a class="kt-link" href="' + esc(link) + '" target="_blank" rel="noopener">' + esc(link) + '</a>' +
+        '<div class="adm-row"><button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" data-copy="' + esc(link) + '">Copy link</button>' +
+        '<button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" data-reset="' + esc(t.token) + '">Reset shots</button></div></li>';
+    }).join('') : '<li class="cam-empty">No test passes yet.</li>';
+    $('rehearsal-stats').innerHTML =
+      '<dt>Song board</dt><dd>' + r.song_requests + ' requests · ' + r.votes + ' votes</dd>' +
+      '<dt>Photos</dt><dd>' + r.real_photos + ' from guests · ' + r.test_photos + ' from test passes</dd>';
+    $('make-tests').textContent = list.length >= 3 ? 'Test passes ready' : 'Make 3 test passes';
+    $('make-tests').disabled = list.length >= 3;
+  }
+  function loadRehearsal() {
+    if (!key) return Promise.resolve();
+    return api.admin.rehearsal(key).then(renderRehearsal).catch(function () {});
+  }
+  $('make-tests').addEventListener('click', function () {
+    api.admin.makeTestPasses(key, 3).then(function (r) { renderRehearsal(r); toast('Test passes ready.'); })
+      .catch(function (err) { toast(err.message, false); });
+  });
+  $('test-passes').addEventListener('click', function (ev) {
+    var copy = ev.target.closest('[data-copy]'), reset = ev.target.closest('[data-reset]');
+    if (copy) {
+      (navigator.clipboard ? navigator.clipboard.writeText(copy.dataset.copy) : Promise.reject())
+        .then(function () { toast('Link copied.'); }, function () { toast('Copy it from the link above.', false); });
+    }
+    if (reset) {
+      api.admin.resetTestPass(key, reset.dataset.reset)
+        .then(function (r) { toast('Shots reset (' + r.removed + ' photo' + (r.removed === 1 ? '' : 's') + ' removed).'); return loadRehearsal(); })
+        .catch(function (err) { toast(err.message, false); });
+    }
+  });
+  $('delete-tests').addEventListener('click', function () {
+    if (!confirm('Delete every test pass and its photos? Phones that used one go back to having no pass.')) return;
+    api.admin.deleteTestPasses(key)
+      .then(function (r) { toast('Test passes deleted (' + r.removed + ' photos removed).'); return loadRehearsal(); })
+      .catch(function (err) { toast(err.message, false); });
+  });
+  $('clear-songs').addEventListener('click', function () {
+    var word = prompt('This removes every song request and vote, for everyone. Type CLEAR to go ahead.');
+    if (word === null) return;
+    api.admin.clearSongs(key, word.trim())
+      .then(function (r) { toast('Song board cleared (' + r.removed + ' requests).'); return loadRehearsal(); })
+      .catch(function (err) { toast(err.message, false); });
+  });
+
+  setInterval(function () { if (!document.hidden && key && !document.querySelector('#admin :focus')) { load(); loadRehearsal(); } }, 30000);
   load();
 })();

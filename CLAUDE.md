@@ -42,7 +42,7 @@ site/                       static pages (no build step)
   camera/                   disposable camera (pass required, no peeking)
   photos/                   the reveal: everyone's photos, guests with a pass
   p/                        QR landing page (/p/?pass=<token>), never switched off
-  admin/                    organizer screen: feature switches + times, camera, reveal
+  admin/                    organizer screen: feature switches + times, camera, reveal, rehearsal
   404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
@@ -65,10 +65,12 @@ supabase/
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
 scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
 scripts/requirements.txt    cryptography, Pillow, openpyxl
+scripts/load_test.mjs       N phones polling the song board (read-only), latency + errors
 tests/test_wallet_passes.py signs test passes with a throwaway certificate, verifies with openssl
 tests/sql/run.sh            migrations + SQL tests on a throwaway local Postgres
 docs/songs.md               song rules, Spotify app setup, DJ questions, decisions
 docs/wallet.md              Apple Developer + Google Wallet account setup (Phase 4)
+docs/runbook.md             rehearsal checklist, the day before, the night, after
 private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
 ```
 
@@ -187,6 +189,8 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   `qr_url` column for the print shop.
 - ✅ Guests loaded: 105 passes, 14 tables, tokens matching the print merge
   sent from the build session (`private/print-merge-with-qr.csv`).
+- Gates are **P01–P14** (one per table, as in the workbook), not the K/T +
+  table number the design system first assumed; the design system is updated.
 - Passes are **not sent ahead**: guests first get them with the paper pass at
   cocktail hour, so each pass is generated once, after seating is final (after
   Nov 9), with its real gate. No TBA version or replacement needed.
@@ -238,19 +242,27 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   defaults are the offline fallback.
 - ✅ Organizer screen `/admin/` with its own key: switches and Pacific times
   per feature, shots per pass, the reveal time and "Release photos now".
-- ☐ Set the organizer key (`app_private.set_organizer_key`, not set as of
-  Nov 4) and choose the night's schedule (likely: camera and
+- ✅ Organizer key set.
+- ☐ Choose the night's schedule in `/admin/` (likely: camera and
   Wallet at cocktail hour, songs open now and closed by the DJ, photos 24
   hours after).
 
-### 7. Rehearsal (Nov 17–20)
-iPhone Safari + Android Chrome (camera denied, screen lock, refresh mid-upload,
-bad wifi; Wallet add on both); every timed release with `?now=`; venue
-walk-through; light load test (~105 guests); backups; one-page day-of runbook.
+### 7. Rehearsal (Nov 17–20) — tools built
+- ✅ Test passes (`passes.is_test`), made from `/admin/` → Rehearsal: behave
+  like real passes, but their shots can be reset and their photos never reach
+  the gallery. Clean slate for the night: delete test passes (rows and photo
+  files, via the `camera` function's organizer-only `purge`) and clear the
+  song board (type CLEAR).
+- ✅ `scripts/load_test.mjs`: ~105 read-only phones polling the board.
+- ✅ `docs/runbook.md`: phone checklist (iPhone Safari + Android Chrome, dim
+  room, airplane mode, page closed mid-upload, screen lock, Wallet), load
+  test, venue walk-through, the day before, the night's "if… then…", after.
+- ☐ Run it: the checklist on real phones, the load test once, the venue.
 
 ### 8. The night and after (Nov 21–22)
-Watch uploads (`/admin/`) and the DJ view. Next day: export the setlist and
-every photo, release the gallery, then downgrade Supabase.
+Follow `docs/runbook.md`: watch uploads (`/admin/`) and the DJ view. Next
+day: export the setlist and every photo, release the gallery, then downgrade
+Supabase.
 
 ### Later / if there's time
 Table pages from NFC placards (`TableHeader`, `GuestList`; the workbook's NFC
@@ -260,8 +272,6 @@ URL column is ready for them); a "now playing" line from the DJ's Played tap.
 
 - Content for the Details `EDIT ME` cards (Zola wasn't reachable from the build
   session; `zola.com` would need to be on its network allowlist).
-- Gates: the workbook uses P01–P14, while the design system and the workbook's
-  own note say K or T + table number (K9). Which is printed?
 - 5 workbook rows carry a QC note ("family-name-first guess"): confirm their
   FIRST/LAST and STRIP NAME before printing.
 - Do the Apple and Google accounts exist yet, and under whose name?

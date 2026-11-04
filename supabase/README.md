@@ -8,7 +8,8 @@ pages themselves are static on GitHub Pages and talk to this project directly.
 config.toml   Edge Functions + the photos bucket (the GitHub integration deploys both)
 migrations/   schema + every rule, as Postgres functions (the only API)
 functions/    songs: Spotify search and song submission
-              camera: signed upload URLs for reserved shots; gallery links after the reveal
+              camera: signed upload URLs for reserved shots; gallery links after the reveal;
+                      organizer-only "purge" of test passes' photo files (rehearsal)
               wallet: serves a guest's signed Apple pass to its token (no login)
 
 tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
@@ -28,6 +29,7 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | Download the Apple Wallet pass | Edge Function `wallet` (`GET ?t=<token>`) | whoever holds the token, while `wallet` is open |
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
+| Rehearsal tools | `rpc('admin_rehearsal' / 'admin_make_test_passes' / 'admin_clear_songs')`, `camera` function `purge` | organizer key |
 
 Tables are never exposed: RLS is on with no policies, and the API roles have
 no table grants. Each guest phone becomes a Supabase **anonymous user** the
@@ -112,6 +114,15 @@ update public.events set photos_reveal_at = now();          -- release the photo
 - Export everything after the night: Storage → `photos` in the dashboard, or
   with the CLI (check `supabase storage cp --help` first; it's experimental):
   `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
+
+## Rehearsal
+
+- Test passes (`passes.is_test`) come from `/admin/` → Rehearsal, up to 10.
+  Their photos are left out of the gallery; their shots can be reset.
+- **Delete test passes** removes them, their photo rows and their files.
+  **Clear song board** deletes every request and vote (type CLEAR).
+- Load test: `node scripts/load_test.mjs --phones 105 --minutes 3` (read-only).
+- Full checklist: `docs/runbook.md`.
 
 ## Before the day
 

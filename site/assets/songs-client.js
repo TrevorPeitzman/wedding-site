@@ -122,7 +122,13 @@
           return rpc('admin_set_feature', { p_key: key, p_feature: feature, p_on: on,
                                             p_opens_at: opensAt || null, p_closes_at: closesAt || null });
         },
-        setCamera: function (key, settings) { return rpc('admin_set_camera', { p_key: key, p_settings: settings }); }
+        setCamera: function (key, settings) { return rpc('admin_set_camera', { p_key: key, p_settings: settings }); },
+        // Rehearsal (organizer key).
+        rehearsal: function (key) { return rpc('admin_rehearsal', { p_key: key }); },
+        makeTestPasses: function (key, count) { return rpc('admin_make_test_passes', { p_key: key, p_count: count }); },
+        resetTestPass: function (key, token) { return fn({ action: 'purge', key: key, what: 'test_pass', token: token }, 'camera'); },
+        deleteTestPasses: function (key) { return fn({ action: 'purge', key: key, what: 'test_passes' }, 'camera'); },
+        clearSongs: function (key, confirmWord) { return rpc('admin_clear_songs', { p_key: key, p_confirm: confirmWord }); }
       },
       // Disposable camera. Every call needs a guest session: the pass the
       // phone claimed is the camera's identity.
@@ -176,6 +182,9 @@
     return { shots: [] };
   }
   function saveCam(c) { try { localStorage.setItem(CAM_KEY, JSON.stringify(c)); } catch (e) {} }
+  function demoTests() {
+    try { return JSON.parse(localStorage.getItem('kt-rehearsal-demo')) || []; } catch (e) { return []; }
+  }
   function demoFeatures() {
     var f = null;
     try { f = JSON.parse(localStorage.getItem('kt-features-demo')); } catch (e) {}
@@ -401,6 +410,31 @@
             if (settings.photos_reveal_at) c.reveal_at = settings.photos_reveal_at === 'now' ? new Date().toISOString() : settings.photos_reveal_at;
             saveCam(c);
           });
+        },
+        // Demo rehearsal: fake test passes in localStorage. Their links open
+        // the demo landing page with a pass.
+        rehearsal: function (key) {
+          return admin(key, function (s) {
+            return { test_passes: demoTests(), test_photos: 0, real_photos: cam().shots.length,
+                     song_requests: s.requests.length, votes: s.requests.reduce(function (n, r) { return n + r.voters.length; }, 0) };
+          });
+        },
+        makeTestPasses: function (key, count) {
+          var t = demoTests();
+          for (var i = t.length + 1; i <= Math.min(count || 3, 10); i++) {
+            t.push({ token: 'DemoTestPass' + ('0000' + i).slice(-4), name: 'Test Guest ' + i, shots_used: 0, phones: 0 });
+          }
+          try { localStorage.setItem('kt-rehearsal-demo', JSON.stringify(t)); } catch (e) {}
+          return this.rehearsal(key);
+        },
+        resetTestPass: function (key) { saveCam({ shots: [] }); return admin(key, function () { return { ok: true, removed: 0 }; }); },
+        deleteTestPasses: function (key) {
+          try { localStorage.removeItem('kt-rehearsal-demo'); } catch (e) {}
+          return admin(key, function () { return { ok: true, removed: 0 }; });
+        },
+        clearSongs: function (key, confirmWord) {
+          if (confirmWord !== 'CLEAR') return fail('not_confirmed', 'Type CLEAR to empty the song board.');
+          return admin(key, function (s) { var n = s.requests.length; s.requests = []; return { removed: n }; });
         }
       },
       // Demo camera: the same rules, kept in localStorage. Uploads "fail"
@@ -491,7 +525,8 @@
     return (client = { mode: 'offline', init: function () { return Promise.resolve(); }, board: down, search: down,
       request: down, vote: down,
       admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
-               features: down, setFeature: down, setCamera: down },
+               features: down, setFeature: down, setCamera: down, rehearsal: down, makeTestPasses: down,
+               resetTestPass: down, deleteTestPasses: down, clearSongs: down },
       camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down },
       wallet: { card: down, appleUrl: function () { return '#'; } } });
   };
