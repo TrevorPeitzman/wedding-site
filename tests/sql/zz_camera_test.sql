@@ -61,10 +61,12 @@ select t.expect_error($$select public.reserve_shot('11111111-0000-0000-0000-0000
 select t.expect_error($$select public.confirm_shot((select '00000000-0000-0000-0000-000000000000')::uuid)$$, 'not_found');
 reset role;
 
--- Camera switched off: no new shots.
+-- Camera switched off: no new shots. (Camera settings are the organizer's.)
 select app_private.set_admin_key('a-long-dj-key-for-tests');
+select app_private.set_organizer_key('an-organizer-key-for-tests');
 set role anon;
-select public.admin_update_event('a-long-dj-key-for-tests', '{"camera_open": false}');
+select t.expect_error($$select public.admin_set_camera('a-long-dj-key-for-tests', '{"camera_open": false}')$$, 'not_organizer');
+select public.admin_set_camera('an-organizer-key-for-tests', '{"camera_open": false}');
 reset role;
 set role authenticated;
 select t.as_guest('00000000-0000-0000-0000-00000000000a');
@@ -77,12 +79,17 @@ select t.expect_error($$select public.gallery_paths_as('00000000-0000-0000-0000-
 select t.expect_error($$select public.gallery_paths_as('00000000-0000-0000-0000-0000000000d1')$$, 'not_revealed');
 reset role;
 set role anon;
-select public.admin_update_event('a-long-dj-key-for-tests', '{"photos_reveal_at": "now"}');
+select public.admin_set_camera('an-organizer-key-for-tests', '{"photos_reveal_at": "now"}');
 select t.check((public.admin_camera('a-long-dj-key-for-tests')->>'uploaded')::int = 1, 'organizer stats');
 reset role;
 set role service_role;
 select t.check(jsonb_array_length(public.gallery_paths_as('00000000-0000-0000-0000-0000000000d1')) = 1,
                'after the reveal: uploaded photos only');
+reset role;
+
+-- Put the camera back for the next test file.
+set role anon;
+select public.admin_set_camera('an-organizer-key-for-tests', '{"camera_open": true}');
 reset role;
 
 select 'ok' as camera_test;

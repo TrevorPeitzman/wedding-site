@@ -41,6 +41,15 @@
   }
 
   /* --------------------------------------------------------- render -- */
+
+  // A title that opens the track in Spotify (its app, if installed: Spotify's
+  // track links are universal links). Demo-catalog ids aren't real tracks.
+  function titleHtml(r) {
+    var id = r.spotify_id || '';
+    if (!/^[A-Za-z0-9]{22}$/.test(id) || /^demo/.test(id)) return esc(r.title);
+    return '<a class="song-link" href="https://open.spotify.com/track/' + id + '" target="_blank" rel="noopener">' +
+      esc(r.title) + '<span class="visually-hidden"> (opens in Spotify)</span></a>';
+  }
   function row(r, i, done) {
     var votes = r.votes + (r.votes === 1 ? ' vote' : ' votes');
     var buttons = done
@@ -51,7 +60,7 @@
         '<button class="kt-btn kt-btn-quiet kt-btn-sm" data-act="block" data-id="' + r.id + '">Block artist</button>';
     return '<li class="song-row dj-row' + (done ? ' is-played' : '') + '">' +
       '<span class="song-rank" aria-hidden="true">' + (done ? '' : i + 1) + '</span>' +
-      '<div class="song-meta"><p class="song-title">' + esc(r.title) + '</p>' +
+      '<div class="song-meta"><p class="song-title">' + titleHtml(r) + '</p>' +
       '<p class="song-artist">' + esc(r.artist) + '</p>' +
       (r.requester_name ? '<p class="song-by">Asked for by ' + esc(r.requester_name) + '</p>' : '') +
       (done ? '<p class="song-by">' + (r.status === 'played' ? 'Played' : 'Hidden') + '</p>' : '') + '</div>' +

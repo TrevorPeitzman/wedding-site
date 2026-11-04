@@ -1,14 +1,18 @@
 # Deploying wedding.peitzman.net
 
 Three parts, in this order: Supabase (the backend), GitHub Pages (the site),
-then DNS. Total hands-on time is about 30 minutes, plus waiting for DNS and
-the HTTPS certificate.
+then DNS. All three are set up and live as of November 4. This guide is how
+it was done, and how to redo it.
+
+Day to day, a deploy is just a merge to `main`: Pages republishes `site/`,
+and the Supabase integration applies new migrations and redeploys the
+functions and the `photos` bucket.
 
 ## 1. Supabase
 
-Follow `supabase/README.md` for the project itself (plan, auth settings, DJ
-key, Spotify secrets, `site/assets/config.js`). Two choices about how changes
-reach it:
+Follow `supabase/README.md` for the project itself (plan, auth settings, the
+DJ and organizer keys, Spotify secrets, `site/assets/config.js`, guests). Two
+choices about how changes reach it:
 
 **Database: link the repo with Supabase's GitHub integration (recommended).**
 The repo already has the layout it expects: `supabase/config.toml`, and
@@ -25,18 +29,19 @@ timestamped files in `supabase/migrations/`.
 4. The integration deploys **only when something is pushed or merged to
    `main` after it is enabled**. If it was set up after the last merge, the
    next merge triggers the first deploy. It applies new files in
-   `supabase/migrations/` and deploys the Edge Functions declared in
-   `supabase/config.toml` (`songs` is). Auth and API settings in that file are
-   ignored: set those in the dashboard.
-5. Check it worked: Database → Migrations should list
-   `20261104000000_song_requests` and `20261105000000_pass_details`. Only then
-   run the DJ key command below.
+   `supabase/migrations/`, deploys the Edge Functions declared in
+   `supabase/config.toml` (`songs`, `camera`) and creates the buckets declared
+   there (`photos`). Auth and API settings in that file are ignored: set those
+   in the dashboard.
+5. Check it worked: Database → Migrations lists every file in
+   `supabase/migrations/`. Only then run the key commands below.
 6. From then on, a database change is a new file in `supabase/migrations/`.
    Never edit one that has already been applied: it won't run again.
 
-Still manual, because they're secrets or private data: the DJ key
-(`select app_private.set_admin_key(...)`), the Spotify secrets, and loading
-guests (`scripts/import_passes.py`, then run `private/passes.sql`).
+Still manual, because they're secrets or private data: the DJ and organizer
+keys (`app_private.set_admin_key(...)`, `app_private.set_organizer_key(...)`),
+the Spotify secrets, and loading guests (`scripts/import_passes.py`, then paste
+the contents of `private/passes.sql` into the SQL editor).
 
 **Edge Functions** deploy through the integration (step 4). The `Deploy
 functions` workflow is a fallback if you don't use the integration: add
@@ -46,8 +51,8 @@ deploys. With both set up, a function just deploys twice, which is harmless.
 
 ## 2. GitHub Pages
 
-**The repo is private.** GitHub Pages publishes from a private repo only on a
-paid plan (GitHub Pro, $4/month). Choose one:
+**If the repo is private,** GitHub Pages publishes it only on a paid plan
+(GitHub Pro, $4/month). Choose one:
 
 - **GitHub Pro.** Nothing else changes.
 - **Make the repo public.** Nothing secret is committed: guest data is
@@ -60,7 +65,7 @@ paid plan (GitHub Pro, $4/month). Choose one:
 Then:
 
 1. Repo → Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-2. Merge this branch into `main`. The `Deploy site` workflow publishes `site/`.
+2. Merge into `main`. The `Deploy site` workflow publishes `site/`.
    Watch it under the Actions tab; its summary shows the `github.io` URL.
 3. Settings → Pages → Custom domain: `wedding.peitzman.net` → Save. (No
    `CNAME` file is needed with an Actions deploy.)
@@ -86,13 +91,18 @@ HTTPS**. The certificate can take from a few minutes to a day.
 ## 4. Check it
 
 - https://wedding.peitzman.net loads, in day and night colors.
-- `/songs/` shows **no** "Demo mode" notice once `config.js` is filled in. A
-  test request appears in the DJ view: `/songs/dj/#key=<your key>`.
+- `/songs/` shows **no** "Demo mode" notice. A test request appears in the DJ
+  view (`/songs/dj/#key=<DJ key>`), and its title opens Spotify.
 - A QR link from `private/print-merge-with-qr.csv` opens `/p/` and the address
-  bar loses the `?pass=` part.
+  bar loses the `?pass=` part. From there, the camera takes a shot and it
+  reaches **Uploaded**.
+- `/admin/#key=<organizer key>` shows the five features and the camera counts.
 
 ## Switching things off, or opening them later
 
-`site/assets/features.js` has one line per feature. `on: false` removes it
-from the site; `opensAt` sets a time it opens to guests. Commit and push, and
-Pages redeploys in about a minute.
+Use the organizer screen, `/admin/`: each feature has an on/off switch and
+opening and closing times (Pacific). The database enforces them straight away,
+and pages pick them up on their next load; no deploy needed.
+
+`site/assets/features.js` holds the fallback the pages use only when Supabase
+can't be reached. Keep its defaults matching the real schedule before the night.

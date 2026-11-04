@@ -1,4 +1,5 @@
-/* Data layer for the song board, the DJ view and the disposable camera.
+/* Data layer for the song board, the DJ view, the disposable camera and the
+ * organizer screen.
  *
  * KT.songsClient() returns one of two backends with the same methods:
  *  - live: Supabase (database functions + the `songs` Edge Function)
@@ -114,7 +115,14 @@
           });
         },
         deleteRule: function (key, id) { return rpc('admin_delete_block_rule', { p_key: key, p_rule_id: id }); },
-        camera: function (key) { return rpc('admin_camera', { p_key: key }); }
+        camera: function (key) { return rpc('admin_camera', { p_key: key }); },
+        // Organizer key only (the admin screen).
+        features: function (key) { return rpc('admin_features', { p_key: key }); },
+        setFeature: function (key, feature, on, opensAt, closesAt) {
+          return rpc('admin_set_feature', { p_key: key, p_feature: feature, p_on: on,
+                                            p_opens_at: opensAt || null, p_closes_at: closesAt || null });
+        },
+        setCamera: function (key, settings) { return rpc('admin_set_camera', { p_key: key, p_settings: settings }); }
       },
       // Disposable camera. Every call needs a guest session: the pass the
       // phone claimed is the camera's identity.
@@ -157,6 +165,15 @@
     return { shots: [] };
   }
   function saveCam(c) { try { localStorage.setItem(CAM_KEY, JSON.stringify(c)); } catch (e) {} }
+  function demoFeatures() {
+    var f = null;
+    try { f = JSON.parse(localStorage.getItem('kt-features-demo')); } catch (e) {}
+    f = f || {};
+    ['schedule', 'details', 'songs', 'camera', 'wallet'].forEach(function (n) {
+      if (!f[n]) f[n] = { on: true, opens_at: null, closes_at: null };
+    });
+    return f;
+  }
 
   function demoClient() {
     var catalog = null;
@@ -343,6 +360,36 @@
             var c = cam();
             return { open: true, shots_per_pass: 12, uploaded: c.shots.filter(function (x) { return x.status === 'uploaded'; }).length };
           });
+        },
+        // Demo organizer screen: the schedule is kept where features.js reads
+        // it in demo mode, so every demo page follows these settings.
+        features: function (key) {
+          return admin(key, function () {
+            var f = demoFeatures(), c = cam();
+            return { features: f, passes: 0, passes_claimed: 0,
+                     camera: { open: true, shots_per_pass: 12, reveal_at: c.reveal_at || DEMO_REVEAL,
+                               uploaded: c.shots.filter(function (x) { return x.status === 'uploaded'; }).length,
+                               reserved: c.shots.filter(function (x) { return x.status === 'reserved'; }).length,
+                               passes_shooting: c.shots.length ? 1 : 0, bytes: 0 } };
+          });
+        },
+        setFeature: function (key, feature, on, opensAt, closesAt) {
+          if (opensAt && closesAt && Date.parse(closesAt) <= Date.parse(opensAt)) {
+            return fail('bad_times', 'The closing time has to be after the opening time.');
+          }
+          return admin(key, function () {
+            var f = demoFeatures();
+            f[feature] = { on: on !== false, opens_at: opensAt || null, closes_at: closesAt || null };
+            try { localStorage.setItem('kt-features-demo', JSON.stringify(f)); } catch (e) {}
+            return f;
+          });
+        },
+        setCamera: function (key, settings) {
+          return admin(key, function () {
+            var c = cam();
+            if (settings.photos_reveal_at) c.reveal_at = settings.photos_reveal_at === 'now' ? new Date().toISOString() : settings.photos_reveal_at;
+            saveCam(c);
+          });
         }
       },
       // Demo camera: the same rules, kept in localStorage. Uploads "fail"
@@ -353,11 +400,12 @@
           if (pass) { var s0 = load(); s0.me = { name: 'Guest with pass', from_pass: true }; save(s0); forgetPass(); }
           var s = load(), c = cam();
           var used = c.shots.length;
-          var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(DEMO_REVEAL);
+          var reveal = c.reveal_at || DEMO_REVEAL;
+          var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(reveal);
           return later({ open: true, has_pass: !!s.me.from_pass, first_name: s.me.from_pass ? 'Guest' : null,
                          shots_per_pass: 12, used: used, left: Math.max(0, 12 - used),
                          uploaded: c.shots.filter(function (x) { return x.status === 'uploaded'; }).length,
-                         reveal_at: DEMO_REVEAL, revealed: revealed,
+                         reveal_at: reveal, revealed: revealed,
                          shots: c.shots.map(function (x) { return { client_id: x.client_id, status: x.status }; }) });
         },
         reserve: function (clientId) {
@@ -384,7 +432,7 @@
           return later({ photo_id: photoId, status: 'uploaded' });
         },
         gallery: function () {
-          var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(DEMO_REVEAL);
+          var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(cam().reveal_at || DEMO_REVEAL);
           if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
           return later({ ok: true, photos: [] });
         }
@@ -413,7 +461,8 @@
     var down = function () { return Promise.reject(refusal('unavailable', 'We couldn’t connect. Check your signal and reload the page.')); };
     return (client = { mode: 'offline', init: function () { return Promise.resolve(); }, board: down, search: down,
       request: down, vote: down,
-      admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down },
+      admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
+               features: down, setFeature: down, setCamera: down },
       camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down } });
   };
 })();
