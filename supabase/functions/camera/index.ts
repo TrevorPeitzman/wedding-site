@@ -10,6 +10,9 @@
 //   After the reveal, signed URLs (1 hour) for every uploaded photo, for a
 //   phone holding a claimed pass. Before it, a not_revealed refusal.
 //
+// POST { action: "purge", key, what: "test_pass" | "test_passes", token? }
+//   Organizer only (rehearsal): drops test shots and removes their files.
+//
 // Refusals come back as 200 { ok: false, code, message } like `songs`.
 import { createClient } from "jsr:@supabase/supabase-js@2.45.4";
 
@@ -48,6 +51,30 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rehearsal clean-up, organizer key only: the database checks the key,
+    // drops the rows and returns the photo paths; this removes the files.
+    //   { action: "purge", key, what: "test_pass", token }  one test pass's shots
+    //   { action: "purge", key, what: "test_passes" }       every test pass
+    if (body.action === "purge") {
+      const anon = createClient(URL_, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const key = String(body.key ?? "");
+      const call = body.what === "test_pass"
+        ? anon.rpc("admin_reset_test_pass", { p_key: key, p_token: String(body.token ?? "") })
+        : body.what === "test_passes"
+        ? anon.rpc("admin_delete_test_passes", { p_key: key })
+        : null;
+      if (!call) return refuse("bad_request", "Unknown clean-up.");
+      const { data: paths, error } = await call;
+      if (error) return fromDb(error);
+      if (paths.length) {
+        const { error: rmError } = await admin.storage.from("photos").remove(paths);
+        if (rmError) throw rmError;
+      }
+      return json({ ok: true, removed: paths.length });
+    }
+
     const auth = req.headers.get("Authorization") ?? "";
     const { data: who } = await admin.auth.getUser(auth.replace(/^Bearer\s+/i, ""));
     if (!who?.user) return refuse("no_session", "Reload the page and try again.");

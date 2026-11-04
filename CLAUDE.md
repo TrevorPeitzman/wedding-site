@@ -42,7 +42,7 @@ site/                       static pages (no build step)
   camera/                   disposable camera (pass required, no peeking)
   photos/                   the reveal: everyone's photos, guests with a pass
   p/                        QR landing page (/p/?pass=<token>), never switched off
-  admin/                    organizer screen: feature switches + times, camera, reveal
+  admin/                    organizer screen: feature switches + times, camera, reveal, rehearsal
   404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
@@ -65,10 +65,12 @@ supabase/
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
 scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
 scripts/requirements.txt    cryptography, Pillow, openpyxl
+scripts/load_test.mjs       N phones polling the song board (read-only), latency + errors
 tests/test_wallet_passes.py signs test passes with a throwaway certificate, verifies with openssl
 tests/sql/run.sh            migrations + SQL tests on a throwaway local Postgres
 docs/songs.md               song rules, Spotify app setup, DJ questions, decisions
 docs/wallet.md              Apple Developer + Google Wallet account setup (Phase 4)
+docs/runbook.md             rehearsal checklist, the day before, the night, after
 private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
 ```
 
@@ -243,14 +245,22 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   Wallet at cocktail hour, songs open now and closed by the DJ, photos 24
   hours after).
 
-### 7. Rehearsal (Nov 17–20)
-iPhone Safari + Android Chrome (camera denied, screen lock, refresh mid-upload,
-bad wifi; Wallet add on both); every timed release with `?now=`; venue
-walk-through; light load test (~105 guests); backups; one-page day-of runbook.
+### 7. Rehearsal (Nov 17–20) — tools built
+- ✅ Test passes (`passes.is_test`), made from `/admin/` → Rehearsal: behave
+  like real passes, but their shots can be reset and their photos never reach
+  the gallery. Clean slate for the night: delete test passes (rows and photo
+  files, via the `camera` function's organizer-only `purge`) and clear the
+  song board (type CLEAR).
+- ✅ `scripts/load_test.mjs`: ~105 read-only phones polling the board.
+- ✅ `docs/runbook.md`: phone checklist (iPhone Safari + Android Chrome, dim
+  room, airplane mode, page closed mid-upload, screen lock, Wallet), load
+  test, venue walk-through, the day before, the night's "if… then…", after.
+- ☐ Run it: the checklist on real phones, the load test once, the venue.
 
 ### 8. The night and after (Nov 21–22)
-Watch uploads (`/admin/`) and the DJ view. Next day: export the setlist and
-every photo, release the gallery, then downgrade Supabase.
+Follow `docs/runbook.md`: watch uploads (`/admin/`) and the DJ view. Next
+day: export the setlist and every photo, release the gallery, then downgrade
+Supabase.
 
 ### Later / if there's time
 Table pages from NFC placards (`TableHeader`, `GuestList`; the workbook's NFC
