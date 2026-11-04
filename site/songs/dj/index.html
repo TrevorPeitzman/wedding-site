@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" data-theme="terrace" data-page-feature="songs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>DJ view · Katarina &amp; Trevor</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="/assets/img/crest-cobalt.webp" type="image/webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="/assets/theme.js"></script>
+  <script src="/assets/features.js"></script>
+  <link rel="stylesheet" href="/assets/ds/tokens.css">
+  <link rel="stylesheet" href="/assets/ds/components.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/songs.css">
+  <script src="/assets/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+  <script src="/assets/songs-client.js" defer></script>
+  <script src="/assets/dj.js" defer></script>
+</head>
+<body class="kt-root">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li data-feature="songs"><a href="/songs/">Guest board</a></li>
+          <li><a href="/songs/dj/" aria-current="page">DJ view</a></li>
+        </ul>
+      </nav>
+      <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.2A7 7 0 1 0 16.8 13 5.6 5.6 0 0 1 13.5 3.2Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span class="theme-word">Night</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="page">
+    <header class="kt-title kt-title-md">
+      <span class="kt-title-eyebrow">DJ view</span>
+      <h1 class="kt-title-script">Requests</h1>
+      <hr class="kt-title-rule" aria-hidden="true">
+    </header>
+
+    <div class="kt-notice kt-notice-info" id="demo-note" role="status" hidden>
+      <span class="kt-notice-mark" aria-hidden="true">i</span>
+      <span class="kt-notice-title">Demo mode</span>
+      <p class="kt-notice-body">Not connected to Supabase yet. Any key works, and changes stay in this browser.</p>
+    </div>
+
+    <form class="kt-card" id="key-form" hidden>
+      <h2 class="kt-card-title">Open the DJ view</h2>
+      <div class="kt-card-body stack">
+        <p>Use the DJ link Trevor sent you, or paste its key here.</p>
+        <div class="kt-field">
+          <label class="kt-label" for="key">DJ key</label>
+          <input class="kt-input" id="key" type="password" autocomplete="off" required>
+        </div>
+        <p class="kt-error" id="key-error" role="alert" hidden></p>
+      </div>
+      <div class="kt-card-actions"><button class="kt-btn kt-btn-primary" type="submit">Open</button></div>
+    </form>
+
+    <div class="stack-lg" id="dj" hidden>
+      <section class="stack" aria-labelledby="queue-title">
+        <div class="dj-meta">
+          <h2 class="section-title" id="queue-title">Up next</h2>
+          <p class="kt-hint" id="updated" aria-live="polite"></p>
+        </div>
+        <ol class="song-board" id="queue"></ol>
+      </section>
+
+      <section class="kt-card" aria-labelledby="controls-title">
+        <h2 class="kt-card-title" id="controls-title">Controls</h2>
+        <form class="kt-card-body stack" id="controls">
+          <fieldset class="kt-choices">
+            <legend class="kt-label">Guests can</legend>
+            <div class="dj-toggles">
+              <label class="kt-choice"><input type="checkbox" name="requests_open"><span>Request songs</span></label>
+              <label class="kt-choice"><input type="checkbox" name="voting_open"><span>Vote</span></label>
+              <label class="kt-choice"><input type="checkbox" name="block_explicit"><span>Block explicit songs</span></label>
+            </div>
+          </fieldset>
+          <div class="dj-grid">
+            <div class="kt-field">
+              <label class="kt-label" for="vote-cd">Minutes between votes</label>
+              <input class="kt-input" id="vote-cd" name="vote_cooldown_minutes" type="number" min="0" step="1" inputmode="numeric">
+            </div>
+            <div class="kt-field">
+              <label class="kt-label" for="req-cd">Minutes between requests</label>
+              <input class="kt-input" id="req-cd" name="request_cooldown_minutes" type="number" min="0" step="1" inputmode="numeric">
+            </div>
+            <div class="kt-field">
+              <label class="kt-label" for="cap">Songs per guest</label>
+              <input class="kt-input" id="cap" name="max_requests_per_guest" type="number" min="0" step="1" inputmode="numeric">
+            </div>
+          </div>
+          <div><button class="kt-btn kt-btn-primary" type="submit">Save</button></div>
+        </form>
+      </section>
+
+      <section class="stack" aria-labelledby="played-title">
+        <h2 class="section-title" id="played-title">Played and hidden</h2>
+        <ol class="song-board" id="done"></ol>
+      </section>
+
+      <section class="kt-card" aria-labelledby="rules-title">
+        <h2 class="kt-card-title" id="rules-title">Do-not-play list</h2>
+        <div class="kt-card-body stack">
+          <p class="kt-hint">Blocked songs never show up in guests’ search results.</p>
+          <div id="rules"></div>
+          <form class="stack" id="rule-form">
+            <div class="dj-grid">
+              <div class="kt-field">
+                <label class="kt-label" for="r-kind">Match</label>
+                <select class="kt-input" id="r-kind">
+                  <option value="keyword">Title or artist contains</option>
+                  <option value="artist">Artist contains</option>
+                  <option value="title">Title contains</option>
+                  <option value="spotify_id">Exact Spotify ID</option>
+                </select>
+              </div>
+              <div class="kt-field">
+                <label class="kt-label" for="r-pattern">Text</label>
+                <input class="kt-input" id="r-pattern" required>
+              </div>
+            </div>
+            <div class="kt-field">
+              <label class="kt-label" for="r-reason">Message to guests <span class="kt-opt">(optional)</span></label>
+              <input class="kt-input" id="r-reason" placeholder="That one’s on the do-not-play list.">
+            </div>
+            <div><button class="kt-btn kt-btn-secondary" type="submit">Add rule</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="kt-card" aria-labelledby="export-title">
+        <h2 class="kt-card-title" id="export-title">Setlist</h2>
+        <div class="kt-card-body">
+          <p>Songs marked played, in order, then the rest of the requests by votes.</p>
+        </div>
+        <div class="kt-card-actions">
+          <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" data-export="txt">Download .txt</button>
+          <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" data-export="csv">Download .csv</button>
+          <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" data-export="uris">Spotify URIs</button>
+        </div>
+      </section>
+
+      <p class="center"><button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="forget">Forget this DJ key</button></p>
+    </div>
+  </main>
+
+  <div class="song-toast" id="toast" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

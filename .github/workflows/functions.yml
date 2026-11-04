@@ -1,0 +1,30 @@
+# Deploys the Supabase Edge Functions when they change on main.
+# Needs two repository secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_ACCESS_TOKEN  a personal access token from supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF   the project's reference ID (Project Settings -> General)
+# Without them the job only prints a notice. Spotify keys stay in Supabase
+# (supabase secrets set ...), never in GitHub.
+name: Deploy functions
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**', '.github/workflows/functions.yml']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: env.SUPABASE_ACCESS_TOKEN == '' || env.PROJECT_REF == ''
+        run: echo "::notice::Add SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF secrets to deploy functions from GitHub."
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
+        run: supabase functions deploy songs --project-ref "$PROJECT_REF"

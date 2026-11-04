@@ -1,5 +1,9 @@
 # Wedding Song Requests
 
+> **Superseded.** This FastAPI prototype has been ported to Supabase + static
+> pages: see `supabase/` and `site/songs/` at the repo root. It stays here as a
+> reference for the rules and the Spotify setup until the new version is live.
+
 A guest-facing song request board. Guests search for a song, put it on the
 list, and upvote each other's picks so the loudest wishes float to the top.
 The DJ works off that list; at the end of the night it exports as a setlist.
