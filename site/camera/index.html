@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" data-theme="terrace" data-page-feature="camera">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Disposable camera · Katarina &amp; Trevor</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F1F0F0">
+  <link rel="icon" href="/assets/img/crest-cobalt.webp" type="image/webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="/assets/ds/fonts/AdoraBouton-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <script src="/assets/theme.js"></script>
+  <script src="/assets/features.js"></script>
+  <link rel="stylesheet" href="/assets/ds/tokens.css">
+  <link rel="stylesheet" href="/assets/ds/components.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/songs.css">
+  <link rel="stylesheet" href="/assets/camera.css">
+  <script src="/assets/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+  <script src="/assets/songs-client.js" defer></script>
+  <script src="/assets/camera.js" defer></script>
+</head>
+<body class="kt-root">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
+          <li data-feature="details"><a href="/details/">Details</a></li>
+          <li data-feature="songs"><a href="/songs/">Songs</a></li>
+        </ul>
+      </nav>
+      <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.2A7 7 0 1 0 16.8 13 5.6 5.6 0 0 1 13.5 3.2Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span class="theme-word">Night</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="page">
+    <header class="kt-title kt-title-lg">
+      <span class="kt-title-eyebrow">The disposable camera</span>
+      <h1 class="kt-title-script">Camera</h1>
+      <hr class="kt-title-rule" aria-hidden="true">
+      <p class="kt-title-sub">A few shots each, and no peeking: everyone’s photos come out after the party.</p>
+    </header>
+
+    <div class="stack">
+      <div class="kt-notice kt-notice-info" role="status" data-until="camera">
+        <span class="kt-notice-mark" aria-hidden="true">i</span>
+        <span class="kt-notice-title">Opening soon</span>
+        <p class="kt-notice-body">The camera opens at <span data-opens="camera">a time we’ll share soon</span>. This page will open on its own.</p>
+      </div>
+
+      <noscript>
+        <div class="kt-notice kt-notice-warning">
+          <span class="kt-notice-mark" aria-hidden="true">!</span>
+          <span class="kt-notice-title">Heads up</span>
+          <p class="kt-notice-body">The camera needs JavaScript turned on.</p>
+        </div>
+      </noscript>
+
+      <div class="kt-notice kt-notice-info" id="demo-note" role="status" hidden>
+        <span class="kt-notice-mark" aria-hidden="true">i</span>
+        <span class="kt-notice-title">Demo mode</span>
+        <p class="kt-notice-body">Not connected: shots stay on this phone and nothing is uploaded.</p>
+      </div>
+
+      <div id="message" aria-live="polite"></div>
+
+      <p class="kt-hint center" id="loading" data-requires="camera">Getting your camera ready…</p>
+
+      <section class="kt-card" id="no-pass" aria-labelledby="no-pass-title" hidden>
+        <h2 class="kt-card-title" id="no-pass-title">Scan your boarding pass</h2>
+        <div class="kt-card-body">
+          <p>Your camera is linked to your boarding pass. Point your phone’s camera at the QR on its stub, and this page opens with your shots ready.</p>
+        </div>
+      </section>
+
+      <section class="kt-card cam-body" id="camera" aria-labelledby="cam-title" data-requires="camera" hidden>
+        <h2 class="visually-hidden" id="cam-title">Your camera</h2>
+        <div class="cam-counter" aria-live="polite">
+          <span class="cam-count" id="left">12</span>
+          <span class="cam-count-label kt-caps" id="left-label">Shots left</span>
+        </div>
+        <label class="kt-btn kt-btn-primary kt-btn-block cam-shutter" id="shutter">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="13.5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 7l1.5-2.5h4L15.5 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span id="shutter-word">Take a photo</span>
+          <input type="file" id="shot" accept="image/*" capture="environment" class="visually-hidden">
+        </label>
+        <p class="kt-hint center" id="shutter-hint">Your phone’s camera opens. Nothing shows here until the photos come out.</p>
+      </section>
+
+      <section class="stack" id="shots-section" aria-labelledby="shots-title" data-requires="camera" hidden>
+        <h2 class="section-title" id="shots-title">Your shots</h2>
+        <ol class="cam-shots" id="shots"></ol>
+        <p class="kt-hint" id="reveal-line"></p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Katarina &amp; Trevor</p>
+    <p>Saturday, November 21, 2026 · The Linden Club, Long Beach</p>
+  </footer>
+</body>
+</html>

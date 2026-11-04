@@ -44,11 +44,16 @@ site/                       static pages (no build step)
   assets/features.js        sync <head>: feature switches + timed release
   assets/site.js            theme toggle, schedule "now", ?pass= capture
   assets/config.js          public Supabase URL + anon key (blank = demo mode)
-  assets/songs-client.js    data layer: live Supabase or in-browser demo
+  camera/                   disposable camera (pass required, no peeking)
+  photos/                   the reveal: everyone's photos, guests with a pass
+  assets/songs-client.js    data layer (songs, DJ, camera): live Supabase or demo
   assets/songs.js, dj.js    the two song pages
+  assets/camera.js          capture, resize, IndexedDB queue, retries
+  assets/photos.js          the gallery
 supabase/
   migrations/               schema + rules (the API is these functions)
   functions/songs/          Spotify search + submit, Edge Function (Deno)
+  functions/camera/         reserve -> signed upload URL; gallery signed URLs
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, print merge + QR URLs
 tests/sql/run.sh            SQL tests on a throwaway local Postgres
 private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
@@ -168,15 +173,24 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   pass for the camera and song board.
 - Paper pass: the stub's decorative PDF417 becomes a QR labelled ADD TO WALLET.
 
-### 5. Camera (Nov 10–16)
-- Requires a claimed pass. 12 shots per pass, enforced in the database with a
-  reserved slot per photo so retries never cost a shot. Photos only, no video.
-- Signed upload URLs straight to a private Storage bucket; server-side size and
-  type checks; client-side resize before upload.
-- Phone: in-page camera (HTTPS + permission), per-photo status (saved on this
-  phone / uploading / uploaded), IndexedDB queue retried on reconnect and focus.
-- Reveal: guests see everyone's photos 24 hours after the event, or earlier
-  when we release them. Organizer-only export.
+### 5. Camera (Nov 10–16) — built, not yet deployed
+- ✅ Pass required; 12 shots per pass (shared by every phone on that pass),
+  enforced in the database with a reserved slot per photo (`reserve_shot`,
+  keyed by a client id, so retries never cost a shot). Photos only.
+- ✅ **No peeking**: the page shows the count and each shot's status, never the
+  image. Capture is the phone's own camera app (`<input capture>`): better in
+  a dark room than an in-page viewfinder, and no permission prompt.
+- ✅ Resize to 2048px + re-encode on the phone (drops location data); signed
+  upload URL from the `camera` function straight to the private `photos`
+  bucket (JPEG only, 8 MB, set in config.toml); `confirm_shot` checks the file
+  is really in storage.
+- ✅ IndexedDB queue: saved on this phone → uploading → uploaded; retried on
+  reconnect, on returning to the page and every 20s; warns before leaving.
+- ✅ Reveal at `events.photos_reveal_at` (default 11:00 PM Nov 22, 24 hours
+  after the end); `/photos/` shows everyone's photos to guests with a pass.
+  Early: `update public.events set photos_reveal_at = now();`
+- ☐ Real-phone test (iPhone + Android, dark room, bad signal) in Phase 7.
+- ☐ Organizer export: see supabase/README.md.
 
 ### 6. Timed release (Nov 12–16)
 - ✅ Static layer: `features.js` hides a feature (`on: false`) or holds it

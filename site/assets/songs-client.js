@@ -1,4 +1,4 @@
-/* Data layer for the song board and the DJ view.
+/* Data layer for the song board, the DJ view and the disposable camera.
  *
  * KT.songsClient() returns one of two backends with the same methods:
  *  - live: Supabase (database functions + the `songs` Edge Function)
@@ -63,9 +63,13 @@
       });
     }
 
-    function fn(body) {
-      return sb.functions.invoke('songs', { body: body }).then(function (r) {
-        if (r.error || !r.data) throw refusal('unavailable', 'Song search is having a moment. Try again in a second.');
+    function fn(body, name) {
+      return sb.functions.invoke(name || 'songs', { body: body }).then(function (r) {
+        if (r.error || !r.data) {
+          throw refusal('unavailable', name === 'camera'
+            ? 'We couldn’t reach the camera. Your photo is safe on this phone; we’ll keep trying.'
+            : 'Song search is having a moment. Try again in a second.');
+        }
         if (r.data.ok === false) throw refusal(r.data.code, r.data.message, r.data.retry_after);
         return r.data;
       });
@@ -109,7 +113,34 @@
             p_hide_request_id: hideId == null ? null : hideId
           });
         },
-        deleteRule: function (key, id) { return rpc('admin_delete_block_rule', { p_key: key, p_rule_id: id }); }
+        deleteRule: function (key, id) { return rpc('admin_delete_block_rule', { p_key: key, p_rule_id: id }); },
+        camera: function (key) { return rpc('admin_camera', { p_key: key }); }
+      },
+      // Disposable camera. Every call needs a guest session: the pass the
+      // phone claimed is the camera's identity.
+      camera: {
+        status: function () {
+          return ensureSession().then(function () { return api.init(); })
+            .then(function () { return rpc('camera_status'); });
+        },
+        reserve: function (clientId) {
+          return ensureSession().then(function () { return fn({ action: 'reserve', client_id: clientId }, 'camera'); });
+        },
+        upload: function (upload, blob) {
+          return sb.storage.from('photos')
+            .uploadToSignedUrl(upload.path, upload.token, blob, { contentType: 'image/jpeg', upsert: true })
+            .then(function (r) {
+              if (r.error) throw refusal('upload_failed', 'The upload didn’t finish. We’ll try again.');
+              return r.data;
+            });
+        },
+        confirm: function (photoId) {
+          return ensureSession().then(function () { return rpc('confirm_shot', { p_photo_id: photoId }); });
+        },
+        gallery: function () {
+          return ensureSession().then(function () { return api.init(); })
+            .then(function () { return fn({ action: 'gallery' }, 'camera'); });
+        }
       }
     };
     return api;
@@ -118,7 +149,14 @@
   /* ------------------------------------------------------------ demo -- */
 
   var DEMO_KEY = 'kt-songs-demo-v1';
+  var CAM_KEY = 'kt-camera-demo-v1';
+  var DEMO_REVEAL = '2026-11-22T23:00:00-08:00';
   var ME = 'me';
+  function cam() {
+    try { var c = JSON.parse(localStorage.getItem(CAM_KEY)); if (c && c.shots) return c; } catch (e) {}
+    return { shots: [] };
+  }
+  function saveCam(c) { try { localStorage.setItem(CAM_KEY, JSON.stringify(c)); } catch (e) {} }
 
   function demoClient() {
     var catalog = null;
@@ -299,6 +337,56 @@
         },
         deleteRule: function (key, id) {
           return admin(key, function (s) { s.rules = s.rules.filter(function (r) { return r.id !== id; }); });
+        },
+        camera: function (key) {
+          return admin(key, function () {
+            var c = cam();
+            return { open: true, shots_per_pass: 12, uploaded: c.shots.filter(function (x) { return x.status === 'uploaded'; }).length };
+          });
+        }
+      },
+      // Demo camera: the same rules, kept in localStorage. Uploads "fail"
+      // while the browser is offline, so the retry queue can be rehearsed.
+      camera: {
+        status: function () {
+          var pass = storedPass();
+          if (pass) { var s0 = load(); s0.me = { name: 'Guest with pass', from_pass: true }; save(s0); forgetPass(); }
+          var s = load(), c = cam();
+          var used = c.shots.length;
+          var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(DEMO_REVEAL);
+          return later({ open: true, has_pass: !!s.me.from_pass, first_name: s.me.from_pass ? 'Guest' : null,
+                         shots_per_pass: 12, used: used, left: Math.max(0, 12 - used),
+                         uploaded: c.shots.filter(function (x) { return x.status === 'uploaded'; }).length,
+                         reveal_at: DEMO_REVEAL, revealed: revealed,
+                         shots: c.shots.map(function (x) { return { client_id: x.client_id, status: x.status }; }) });
+        },
+        reserve: function (clientId) {
+          var s = load(), c = cam();
+          if (!s.me.from_pass) return fail('no_pass', 'Scan the QR on your boarding pass to use the camera.');
+          var shot = c.shots.filter(function (x) { return x.client_id === clientId; })[0];
+          if (!shot) {
+            if (c.shots.length >= 12) return fail('out_of_shots', 'That’s all 12 shots on this pass. Thank you!');
+            shot = { client_id: clientId, photo_id: 'demo-' + clientId, status: 'reserved' };
+            c.shots.push(shot); saveCam(c);
+          }
+          return later({ ok: true, photo_id: shot.photo_id, path: shot.photo_id + '.jpg', status: shot.status,
+                         left: 12 - c.shots.length,
+                         upload: shot.status === 'uploaded' ? null : { path: shot.photo_id + '.jpg', token: 'demo' } });
+        },
+        upload: function () {
+          if (!navigator.onLine) return fail('upload_failed', 'The upload didn’t finish. We’ll try again.');
+          return later({});
+        },
+        confirm: function (photoId) {
+          var c = cam();
+          c.shots.forEach(function (x) { if (x.photo_id === photoId) x.status = 'uploaded'; });
+          saveCam(c);
+          return later({ photo_id: photoId, status: 'uploaded' });
+        },
+        gallery: function () {
+          var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(DEMO_REVEAL);
+          if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
+          return later({ ok: true, photos: [] });
         }
       }
     };
@@ -322,9 +410,10 @@
     // Configured, but the Supabase library didn't load (blocked CDN, bad
     // signal). Never fall back to the demo here: guests would think their
     // requests went through.
-    var down = function () { return Promise.reject(refusal('unavailable', 'We couldn’t reach the song list. Reload the page to try again.')); };
+    var down = function () { return Promise.reject(refusal('unavailable', 'We couldn’t connect. Check your signal and reload the page.')); };
     return (client = { mode: 'offline', init: function () { return Promise.resolve(); }, board: down, search: down,
       request: down, vote: down,
-      admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down } });
+      admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down },
+      camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down } });
   };
 })();
