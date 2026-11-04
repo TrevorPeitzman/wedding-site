@@ -9,6 +9,7 @@ config.toml   Edge Functions + the photos bucket (the GitHub integration deploys
 migrations/   schema + every rule, as Postgres functions (the only API)
 functions/    songs: Spotify search and song submission
               camera: signed upload URLs for reserved shots; gallery links after the reveal
+              wallet: serves a guest's signed Apple pass to its token (no login)
 
 tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 ```
@@ -23,6 +24,8 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | Search, request a song | Edge Function `songs` | anyone / signed-in guest |
 | Camera status, confirm a shot | `rpc('camera_status')`, `rpc('confirm_shot')` | a guest (claimed pass for the camera) |
 | Reserve a shot + upload URL; gallery | Edge Function `camera` | a guest with a claimed pass |
+| Landing page pass card | `rpc('my_pass_card')` | a guest with a claimed pass |
+| Download the Apple Wallet pass | Edge Function `wallet` (`GET ?t=<token>`) | whoever holds the token, while `wallet` is open |
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
 
@@ -86,6 +89,16 @@ update public.feature_schedule set is_on = false where feature = 'camera';
 update public.feature_schedule set opens_at = '2026-11-21 17:45-08' where feature = 'camera';
 update public.events set photos_reveal_at = now();          -- release the photos
 ```
+
+## Wallet passes
+
+- Signed `.pkpass` files sit in the private `wallet` bucket as
+  `<zola_guest_id>.pkpass`, made and uploaded by `scripts/make_wallet_passes.py`
+  (steps in `docs/wallet.md`). Until a guest's file is there, their landing
+  page just shows the on-screen pass.
+- The `wallet` function has `verify_jwt = false` in `config.toml`: Safari opens
+  it as a plain link, and the 16-character pass token is the credential.
+- Google save links go in `passes.google_save_url` (generator not built yet).
 
 ## The camera
 

@@ -141,8 +141,51 @@ https://developers.google.com/wallet/tickets/boarding-passes
 
 ---
 
-## When the accounts are ready
+## Making the Apple passes (once the certificate exists)
 
-Send over (outside the repo): the Team ID, Pass Type ID, Issuer ID and service
-account email. The `.p12` with its password and the JSON key go straight into
-Supabase secrets; the build only needs to know their names.
+Everything else is built and deployed: the private `wallet` bucket, the
+`wallet` Edge Function that serves each pass to its token, and the landing
+page's **Add to Apple Wallet** button (shown on iPhones once a guest's file is
+in the bucket and the `wallet` feature is open in `/admin/`).
+
+On your own computer, in the repo, after `pip install -r scripts/requirements.txt`:
+
+1. Make sure `private/passes.json` is current (it's written by
+   `scripts/import_passes.py`, which never changes existing tokens).
+2. Make a test pass for yourself only, and open it on your iPhone:
+   ```bash
+   P12_PASSWORD='…' python3 scripts/make_wallet_passes.py \
+     --p12 ~/secrets/kt1121-pass.p12 --wwdr ~/secrets/AppleWWDRCAG4.cer \
+     --pass-type-id pass.net.peitzman.wedding --team-id <Team ID> \
+     --only <your zola_guest_id>
+   ```
+   AirDrop or email `private/wallet/<id>.pkpass` to your phone. If Wallet
+   opens it, the chain is right. (The script refuses up front if the
+   certificate doesn't match the Pass Type ID or Team ID.)
+3. Make and upload everyone's, after seating is final:
+   ```bash
+   export SUPABASE_URL=https://pzmeppjcvsjkneducqvd.supabase.co
+   export SUPABASE_SERVICE_ROLE_KEY='…'   # Project Settings → API keys → legacy service_role
+   P12_PASSWORD='…' python3 scripts/make_wallet_passes.py … --upload
+   ```
+   Or without `--upload`: `supabase storage cp -r private/wallet ss:///wallet --experimental --linked`.
+4. Scan a real paper-pass QR on an iPhone: **Add to Apple Wallet** appears
+   under the on-screen pass.
+
+Re-running replaces the files (same serial number per guest), so a seating
+change is just another run.
+
+**Badges.** Apple and Google both ask that their "Add to … Wallet" buttons use
+their official artwork. The landing page uses plain design-system buttons for
+now; drop the official badges into `site/assets/img/` and swap them into
+`site/assets/wallet.js` once you've downloaded them from each brand's
+guidelines page.
+
+## Google save links (not built yet)
+
+The landing page already shows **Save to Google Wallet** on Android for any
+pass whose `passes.google_save_url` is set. Generating those links waits for
+two things: Google's current docs (unreachable from the build session; allow
+`developers.google.com` for the cloud environment and it can be checked) and
+your issuer account. Then: a generator like the Apple one that signs one save
+link per guest with the service account key and stores it per pass.

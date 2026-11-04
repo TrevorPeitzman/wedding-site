@@ -1,11 +1,12 @@
-# Runs the Supabase migrations and SQL tests against a throwaway Postgres.
-name: Database tests
+# Database rules (migrations + SQL tests on a throwaway Postgres) and the
+# Wallet pass generator (signs test passes with a throwaway certificate).
+name: Tests
 
 on:
   push:
-    paths: ['supabase/**', 'tests/sql/**', '.github/workflows/tests.yml']
+    paths: ['supabase/**', 'tests/**', 'scripts/**', '.github/workflows/tests.yml']
   pull_request:
-    paths: ['supabase/**', 'tests/sql/**', '.github/workflows/tests.yml']
+    paths: ['supabase/**', 'tests/**', 'scripts/**', '.github/workflows/tests.yml']
 
 jobs:
   sql:
@@ -13,3 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: tests/sql/run.sh
+
+  wallet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r scripts/requirements.txt
+      - run: python3 tests/test_wallet_passes.py

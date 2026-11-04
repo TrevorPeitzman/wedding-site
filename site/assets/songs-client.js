@@ -149,6 +149,17 @@
           return ensureSession().then(function () { return api.init(); })
             .then(function () { return fn({ action: 'gallery' }, 'camera'); });
         }
+      },
+      // Wallet: the claimed pass for the landing page, and its Apple link
+      // (served by the `wallet` Edge Function to whoever holds the token).
+      wallet: {
+        card: function () {
+          return ensureSession().then(function () { return api.init(); })
+            .then(function () { return rpc('my_pass_card'); });
+        },
+        appleUrl: function (token) {
+          return cfg.supabaseUrl.replace(/\/$/, '') + '/functions/v1/wallet?t=' + encodeURIComponent(token);
+        }
       }
     };
     return api;
@@ -436,6 +447,24 @@
           if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
           return later({ ok: true, photos: [] });
         }
+      },
+      // Demo pass: a sample guest once a ?pass= link was opened. The Wallet
+      // buttons appear but don't download anything.
+      wallet: {
+        card: function () {
+          var pass = storedPass();
+          if (pass) { var s0 = load(); s0.me = { name: 'Guest with pass', from_pass: true }; save(s0); forgetPass(); }
+          if (!load().me.from_pass) return later({ has_pass: false });
+          var f = demoFeatures().wallet, now = (KT.now ? KT.now() : new Date()).getTime();
+          var state = !f.on ? 'off' : f.opens_at && now < Date.parse(f.opens_at) ? 'soon'
+            : f.closes_at && now >= Date.parse(f.closes_at) ? 'closed' : 'open';
+          return later({ has_pass: true, token: 'demo', first_name: 'Dora', last_name: 'Day',
+                         pass_name: 'DAY/DORA', strip_name: 'DORA D.', table_number: 5, gate: 'P05',
+                         seat: '005A', cabin: 'F', destination_city: 'Santorini', destination_code: 'JTR',
+                         ssr_remarks: 'Demo pass: this is what a guest sees.', wallet_state: state,
+                         apple_ready: state === 'open', google_save_url: state === 'open' ? '#google-demo' : null });
+        },
+        appleUrl: function () { return '#apple-demo'; }
       }
     };
   }
@@ -463,6 +492,7 @@
       request: down, vote: down,
       admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
                features: down, setFeature: down, setCamera: down },
-      camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down } });
+      camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down },
+      wallet: { card: down, appleUrl: function () { return '#'; } } });
   };
 })();

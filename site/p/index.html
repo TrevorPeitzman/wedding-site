@@ -18,13 +18,18 @@
   <link rel="stylesheet" href="/assets/ds/tokens.css">
   <link rel="stylesheet" href="/assets/ds/components.css">
   <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/wallet.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
   <script src="/assets/site.js" defer></script>
+  <script src="/assets/songs-client.js" defer></script>
+  <script src="/assets/wallet.js" defer></script>
 </head>
 <!--
   The QR on every printed boarding pass opens this page as /p/?pass=<token>.
   site.js keeps the token on the phone and strips it from the address bar.
   This page is never switched off or redirected: the QR codes are printed.
-  Phase 4 adds the device-aware Add to Wallet button here.
+  wallet.js claims the pass, shows it on screen, and adds the Wallet button
+  for the phone (Apple on iPhone, Google on Android, both elsewhere).
 -->
 <body class="kt-root">
   <a class="skip" href="#main">Skip to content</a>
@@ -50,14 +55,14 @@
       <span class="kt-title-eyebrow">Flight KT 1121</span>
       <h1 class="kt-title-script">Welcome aboard</h1>
       <hr class="kt-title-rule" aria-hidden="true">
-      <p class="kt-title-sub">Your boarding pass is your key to tonight. Keep this page handy.</p>
+      <p class="kt-title-sub" id="welcome">Your boarding pass is your key to tonight. Keep this page handy.</p>
     </header>
 
     <div class="stack">
-      <section class="kt-card" data-feature="wallet" hidden>
-        <!-- Phase 4: device-aware Add to Apple Wallet / Save to Google Wallet. -->
-        <p class="kt-card-eyebrow">Your pass</p>
-        <h2 class="kt-card-title">Keep it on your phone</h2>
+      <section class="stack wal-area" id="pass-area" data-feature="wallet" aria-label="Your boarding pass" hidden>
+        <div id="pass-card"></div>
+        <div class="wal-actions" id="wallet-actions" hidden></div>
+        <p class="kt-hint center" id="wallet-hint" hidden></p>
       </section>
 
       <section class="kt-card" data-feature="camera">
