@@ -1,5 +1,5 @@
 /* Guest song board: search, request, vote, and a polled refresh.
- * Same behavior as the original wedding-song-requests board, restyled on the
+ * Same behavior as the original FastAPI prototype (see docs/songs.md), restyled on the
  * design system and talking to Supabase through songs-client.js. */
 (function () {
   'use strict';

@@ -50,7 +50,7 @@ the window they are refused with `feature_soon` or `feature_closed`.
    select app_private.set_admin_key('<DJ key>');
    select app_private.set_organizer_key('<organizer key>');
    ```
-   DJ view: `https://wedding.peitzman.net/songs/dj/#key=<DJ key>`.
+   DJ view: `https://wedding.peitzman.net/songs/dj/#key=<DJ key>` (or `/dj/#key=…`).
    Organizer screen: `https://wedding.peitzman.net/admin/#key=<organizer key>`.
    The organizer key also opens the DJ view; the DJ key can't open the admin
    screen, change the camera or release the photos.
@@ -60,7 +60,7 @@ the window they are refused with `feature_soon` or `feature_closed`.
    Every guest on venue wifi shares one IP address.
 5. **Spotify:** `supabase secrets set SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... SPOTIFY_MARKET=US`.
    Without them the `songs` function searches a small demo catalog. The
-   Spotify app setup is in `wedding-song-requests/README.md`.
+   Spotify app setup is in `docs/songs.md`.
 6. **Site:** the project URL and the **anon** key go in `site/assets/config.js`.
    Both are public by design. Never put the service-role or a secret key there.
 7. **Guests:** `python3 scripts/import_passes.py <workbook.xlsx>` writes

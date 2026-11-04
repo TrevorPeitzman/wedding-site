@@ -29,9 +29,8 @@ Deploying: `DEPLOY.md`. Backend: `supabase/README.md`.
   the Edge Functions and the `photos` bucket deploy through Supabase's GitHub
   integration on every push to `main` (working directory `.`).
   `.github/workflows/functions.yml` is a fallback for functions.
-- No servers of our own. `wedding-song-requests/` (FastAPI) is the original
-  prototype, superseded now that the Supabase version is live; delete it once
-  nobody needs it as a reference.
+- No servers of our own. The original FastAPI prototype was deleted on Nov 4
+  (it's in git history); what's still useful from it is in `docs/songs.md`.
 
 ## Repo layout
 
@@ -39,10 +38,12 @@ Deploying: `DEPLOY.md`. Backend: `supabase/README.md`.
 site/                       static pages (no build step)
   index.html, schedule/, details/
   songs/                    guest song board; songs/dj/ is the DJ view
+  dj/                       shortcut: /dj/#key=… → /songs/dj/#key=…
   camera/                   disposable camera (pass required, no peeking)
   photos/                   the reveal: everyone's photos, guests with a pass
   p/                        QR landing page (/p/?pass=<token>), never switched off
   admin/                    organizer screen: feature switches + times, camera, reveal
+  404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
   assets/theme.js           sync <head>: Terrace/Finery, KT.now() rehearsal clock
@@ -61,8 +62,9 @@ supabase/
   functions/camera/         reserve -> signed upload URL; gallery signed URLs
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, print merge + QR URLs
 tests/sql/run.sh            migrations + SQL tests on a throwaway local Postgres
+docs/songs.md               song rules, Spotify app setup, DJ questions, decisions
+docs/wallet.md              Apple Developer + Google Wallet account setup (Phase 4)
 private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
-wedding-song-requests/      original FastAPI prototype (superseded)
 ```
 
 ## Working on it
@@ -163,21 +165,22 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   set; anonymous sign-ins on, 300/hour; `config.js` filled (legacy anon JWT key
   on purpose; see the comment there).
 - ✅ Pages live at wedding.peitzman.net (TLS provisioning on Nov 4).
-- ☐ DJ walkthrough (see wedding-song-requests/DESIGN.md "Things to ask him").
+- ☐ DJ walkthrough (questions in `docs/songs.md`).
 
 ### 3. Details live (by Nov 10)
 - Fill the `EDIT ME` cards on the Details page from Zola and un-hide them.
 - Print a test QR code.
 
 ### 4. Wallet passes (Nov 5–16)
-- **Start the accounts, both have lead time.** Apple Developer Program
-  ($99/year) for the Pass Type ID + signing certificate; Google Wallet issuer
-  account, then request publishing access (new accounts are demo-only).
+- **Start the accounts, both have lead time:** step by step in `docs/wallet.md`.
+  Apple Developer Program ($99/year) for the Pass Type ID + signing
+  certificate; Google Wallet issuer account, then request publishing access
+  (new accounts are demo-only).
 - ✅ Guest import: `scripts/import_passes.py` reads the KT 1121 merge workbook
   (105 attending guests) → tokens, `passes.sql`, and the print merge CSV with a
   `qr_url` column for the print shop.
-- ☐ Load the guests: paste the **contents** of `private/passes.sql` into the
-  SQL editor (not its file name).
+- ✅ Guests loaded: 105 passes, 14 tables, tokens matching the print merge
+  sent from the build session (`private/print-merge-with-qr.csv`).
 - Passes are **not sent ahead**: guests first get them with the paper pass at
   cocktail hour, so each pass is generated once, after seating is final (after
   Nov 9), with its real gate. No TBA version or replacement needed.
@@ -220,7 +223,8 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   defaults are the offline fallback.
 - ✅ Organizer screen `/admin/` with its own key: switches and Pacific times
   per feature, shots per pass, the reveal time and "Release photos now".
-- ☐ Set the organizer key and choose the night's schedule (likely: camera and
+- ☐ Set the organizer key (`app_private.set_organizer_key`, not set as of
+  Nov 4) and choose the night's schedule (likely: camera and
   Wallet at cocktail hour, songs open now and closed by the DJ, photos 24
   hours after).
 
@@ -245,6 +249,6 @@ URL column is ready for them); a "now playing" line from the DJ's Played tap.
   own note say K or T + table number (K9). Which is printed?
 - 5 workbook rows carry a QC note ("family-name-first guess"): confirm their
   FIRST/LAST and STRIP NAME before printing.
-- Which token set is final: the one the import script made locally, or the
-  one sent from the build session? Only one may be printed and loaded.
 - Do the Apple and Google accounts exist yet, and under whose name?
+- Google Wallet: does a boarding pass accept a made-up carrier ("KT 1121"), or
+  does it need a Generic pass styled as one? (`docs/wallet.md`)
