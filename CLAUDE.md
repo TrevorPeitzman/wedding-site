@@ -1,8 +1,6 @@
 # Katarina & Trevor — event web app
 
-A mobile-first site for one evening: Katarina and Trevor's **vow renewal**,
-Saturday 21 November 2026, 5:00–11:00 PM PST, The Linden Club, 3636 Linden
-Ave, Long Beach, CA 90807. Domain: **wedding.peitzman.net**.
+A mobile-first site for one evening: Katarina and Trevor's wedding. Domain: **wedding.peitzman.net**.
 
 Guests reach it from the QR on their printed boarding pass, which they first
 receive **during cocktail hour** (and later NFC placards), mostly in a dark
@@ -46,11 +44,16 @@ site/                       static pages (no build step)
   assets/features.js        sync <head>: feature switches + timed release
   assets/site.js            theme toggle, schedule "now", ?pass= capture
   assets/config.js          public Supabase URL + anon key (blank = demo mode)
-  assets/songs-client.js    data layer: live Supabase or in-browser demo
+  camera/                   disposable camera (pass required, no peeking)
+  photos/                   the reveal: everyone's photos, guests with a pass
+  assets/songs-client.js    data layer (songs, DJ, camera): live Supabase or demo
   assets/songs.js, dj.js    the two song pages
+  assets/camera.js          capture, resize, IndexedDB queue, retries
+  assets/photos.js          the gallery
 supabase/
   migrations/               schema + rules (the API is these functions)
   functions/songs/          Spotify search + submit, Edge Function (Deno)
+  functions/camera/         reserve -> signed upload URL; gallery signed URLs
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, print merge + QR URLs
 tests/sql/run.sh            SQL tests on a throwaway local Postgres
 private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
@@ -61,8 +64,9 @@ wedding-song-requests/      original FastAPI prototype (reference only)
 
 - Preview: `python3 -m http.server 8000 -d site` → http://localhost:8000.
   Links are root-absolute (`/schedule/`), so serve `site/` as the web root.
-- With `assets/config.js` blank, the song board and DJ view run in **demo
-  mode** (localStorage, demo catalog, any DJ key). Use it for UI work.
+- `assets/config.js` points at the live project. Add `?demo=1` to any song
+  page URL for **demo mode** in that tab (localStorage, demo catalog, any DJ
+  key; `?demo=0` to leave it). Use it for UI work and rehearsals.
 - Rehearse the night: `?now=2026-11-21T18:10` (Pacific) on any URL; it also
   drives timed release.
 - **Feature switches:** every page links features with `data-feature="<name>"`
@@ -125,7 +129,7 @@ wedding-song-requests/      original FastAPI prototype (reference only)
 
 ## Phased plan
 
-The event is **21 November 2026**. Each phase ends with something usable.
+The event is on a fast-approaching date. Each phase ends with something usable.
 The roadmap drawing is in the Event Webapp Plan doc.
 
 ### 1. Foundations ✅ (Nov 4)
@@ -136,9 +140,12 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Rules ported to Postgres functions with SQL tests; Spotify Edge Function;
   guest board and DJ view rebuilt on the design system; demo mode.
 - ✅ Workflows: Pages deploy, SQL tests, function deploy. `DEPLOY.md`.
-- ☐ Supabase project + GitHub integration (`DEPLOY.md`, `supabase/README.md`).
-- ☐ Fill `site/assets/config.js`; enable Pages; DNS for wedding.peitzman.net.
-- ☐ Try the Edge Function locally (`supabase functions serve`) before deploy.
+- ✅ Supabase project live: migrations via the GitHub integration, DJ key set,
+  `songs` function deployed, `site/assets/config.js` filled (legacy anon JWT
+  key on purpose; see the comment there).
+- ☐ Pages + DNS for wedding.peitzman.net (Pages workflow is running).
+- ☐ First live test from a phone: a search, a request, a vote, the DJ view.
+  If search only finds ~22 classics, the Spotify secrets aren't set.
 - ☐ DJ walkthrough (see wedding-song-requests/DESIGN.md "Things to ask him").
 
 ### 3. Details live (by Nov 10)
@@ -166,15 +173,24 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   pass for the camera and song board.
 - Paper pass: the stub's decorative PDF417 becomes a QR labelled ADD TO WALLET.
 
-### 5. Camera (Nov 10–16)
-- Requires a claimed pass. 12 shots per pass, enforced in the database with a
-  reserved slot per photo so retries never cost a shot. Photos only, no video.
-- Signed upload URLs straight to a private Storage bucket; server-side size and
-  type checks; client-side resize before upload.
-- Phone: in-page camera (HTTPS + permission), per-photo status (saved on this
-  phone / uploading / uploaded), IndexedDB queue retried on reconnect and focus.
-- Reveal: guests see everyone's photos 24 hours after the event, or earlier
-  when we release them. Organizer-only export.
+### 5. Camera (Nov 10–16) — built, not yet deployed
+- ✅ Pass required; 12 shots per pass (shared by every phone on that pass),
+  enforced in the database with a reserved slot per photo (`reserve_shot`,
+  keyed by a client id, so retries never cost a shot). Photos only.
+- ✅ **No peeking**: the page shows the count and each shot's status, never the
+  image. Capture is the phone's own camera app (`<input capture>`): better in
+  a dark room than an in-page viewfinder, and no permission prompt.
+- ✅ Resize to 2048px + re-encode on the phone (drops location data); signed
+  upload URL from the `camera` function straight to the private `photos`
+  bucket (JPEG only, 8 MB, set in config.toml); `confirm_shot` checks the file
+  is really in storage.
+- ✅ IndexedDB queue: saved on this phone → uploading → uploaded; retried on
+  reconnect, on returning to the page and every 20s; warns before leaving.
+- ✅ Reveal at `events.photos_reveal_at` (default 11:00 PM Nov 22, 24 hours
+  after the end); `/photos/` shows everyone's photos to guests with a pass.
+  Early: `update public.events set photos_reveal_at = now();`
+- ☐ Real-phone test (iPhone + Android, dark room, bad signal) in Phase 7.
+- ☐ Organizer export: see supabase/README.md.
 
 ### 6. Timed release (Nov 12–16)
 - ✅ Static layer: `features.js` hides a feature (`on: false`) or holds it

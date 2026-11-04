@@ -8,3 +8,13 @@ enable_anonymous_sign_ins = true
 
 [functions.songs]
 verify_jwt = true
+
+[functions.camera]
+verify_jwt = true
+
+# Disposable camera photos: private, JPEG only (phones re-encode before
+# upload), 8 MB cap enforced by Storage itself.
+[storage.buckets.photos]
+public = false
+file_size_limit = "8MiB"
+allowed_mime_types = ["image/jpeg"]

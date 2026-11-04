@@ -188,3 +188,11 @@ select t.check((select requester_name from public.song_requests r join public.tr
                  where k.title = 'Dancing Queen') = 'Josephine M.', 'earlier requests take the pass name');
 
 select 'ok' as song_requests_test;
+
+-- Every app_private helper pins its search_path (Supabase lint 0011).
+select t.check(not exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'app_private' and p.prokind = 'f'
+      and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')
+), 'app_private helpers pin search_path');
+select 'ok' as search_path_test;

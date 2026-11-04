@@ -1,0 +1,35 @@
+/* Disposable camera and the photo gallery. Tokens only. */
+
+.cam-body { justify-items: stretch; text-align: center; gap: var(--space-4); }
+.cam-counter { display: grid; justify-items: center; gap: var(--space-1); padding-top: var(--space-2); }
+.cam-count {
+  font-family: var(--font-serif); font-size: 88px; line-height: 1; font-weight: 400;
+  color: var(--brass-deep); font-variant-numeric: lining-nums tabular-nums;
+}
+.cam-count-label { font-size: 12px; letter-spacing: .2em; color: var(--text-muted); }
+.cam-shutter { min-height: 56px; position: relative; }
+.cam-shutter svg { width: 22px; height: 22px; }
+.cam-shutter[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.cam-shutter:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.cam-shots { list-style: none; margin: 0; padding: 0; display: grid; }
+.cam-shots li {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--rule); min-width: 0;
+}
+.cam-shots li:first-child { border-top: 1px solid var(--rule); }
+.cam-shot-name { font-weight: 700; font-variant-numeric: tabular-nums lining-nums; }
+.cam-state { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; white-space: nowrap; color: var(--text-muted); }
+.cam-state.is-up { color: var(--success); }
+.cam-state.is-wait { color: var(--warning); }
+.cam-state.is-no { color: var(--danger); }
+.cam-empty { padding: var(--space-4) 0; color: var(--text-muted); font-style: italic; text-align: center; }
+
+/* Gallery */
+.gal-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-2);
+}
+.gal-grid a { display: block; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-sm); background: var(--surface-sunk); }
+.gal-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gal-grid a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

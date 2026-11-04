@@ -27,4 +27,4 @@ jobs:
         with:
           version: latest
       - if: env.SUPABASE_ACCESS_TOKEN != '' && env.PROJECT_REF != ''
-        run: supabase functions deploy songs --project-ref "$PROJECT_REF"
+        run: supabase functions deploy --project-ref "$PROJECT_REF"

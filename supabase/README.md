@@ -59,6 +59,24 @@ phone, enforced by a unique index.
    changes; tokens never change once issued (they're in `private/pass-tokens.csv`,
    so back that file up).
 
+## The camera
+
+- Photos land in the private `photos` bucket (declared in `config.toml`, so
+  the GitHub integration creates it), one `<photo id>.jpg` per shot.
+  `public.photos` records whose pass took each one and whether it uploaded.
+- Settings live on `public.events`: `camera_open`, `shots_per_pass` (12),
+  `photos_reveal_at`. Release the gallery early:
+  ```sql
+  update public.events set photos_reveal_at = now();
+  ```
+- Take one photo out of the gallery (it still counts as a shot):
+  ```sql
+  update public.photos set status = 'removed' where id = '<photo id>';
+  ```
+- Export everything after the night: Storage → `photos` in the dashboard, or
+  with the CLI (check `supabase storage cp --help` first; it's experimental):
+  `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
+
 ## Before the day
 
 - Close or tune requests in the DJ view: cooldowns, songs per guest, explicit filter.
