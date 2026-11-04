@@ -81,6 +81,13 @@ wedding-song-requests/      original FastAPI prototype (reference only)
   FAQ, day-of contact) waiting for content.
 - **Guest data never goes in git**: the workbook, tokens and generated SQL/CSV
   stay in `private/` (ignored) or outside the repo.
+- **Supabase tooling:** `.mcp.json` registers Supabase's MCP server for project
+  `pzmeppjcvsjkneducqvd` (each person signs in once with `claude /mcp` in a local
+  terminal). `.claude/skills/` holds Supabase's agent skills (`supabase`,
+  `supabase-postgres-best-practices`), pinned in `skills-lock.json`; update with
+  `npx skills update -p`. The public-schema `SECURITY DEFINER` functions are
+  deliberate: each revokes PUBLIC and grants back only its intended role, so
+  Supabase's advisor flagging them is expected.
 
 ## Identity
 
