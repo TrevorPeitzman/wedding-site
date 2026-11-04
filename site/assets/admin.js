@@ -1,4 +1,5 @@
-/* Organizer screen: feature switches and times, camera settings, the reveal.
+/* Organizer screen: feature switches and times, camera settings, the reveal,
+ * every photo with who took it (hide one, download some or all), rehearsal.
  * The key arrives once as /admin/#key=<key> and is kept in this browser.
  * Every input and label is in Pacific time, whatever the laptop's zone. */
 (function () {
@@ -172,6 +173,161 @@
     api.admin.setCamera(key, { photos_reveal_at: 'now' })
       .then(function () { toast('The photos are out.'); return load(); })
       .catch(function (err) { toast(err.message, false); });
+  });
+
+  /* -------------------------------------------------------------- photos -- */
+  // Loaded on demand (signed links last an hour; "Refresh photos" renews them).
+  var PAGE = 60;
+  var ph = { all: null, shown: PAGE, picked: {}, busy: false, ask: null };
+  function phName(p) { return [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Guest'; }
+  function phWhen(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-US', { timeZone: TZ, weekday: 'short' }) + ' ' +
+      d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+  }
+  function phFile(p) {
+    var t = parts(new Date(p.uploaded_at));
+    var table = p.is_test ? 'Test' : p.table_number != null ? 'T' + ('0' + p.table_number).slice(-2) : 'T00';
+    var who = [KT.photoTools.slug(p.first_name), KT.photoTools.slug(p.last_name)].filter(Boolean).join('-') || 'Guest';
+    return table + '-' + who + '-' + t.hour + t.minute + '-' + String(p.id).replace(/-/g, '').slice(0, 6) + '.jpg';
+  }
+  function phFiltered() {
+    var table = $('photo-table').value, hiddenOnly = $('photo-hidden-only').checked;
+    return (ph.all || []).filter(function (p) {
+      if (table === 'test' ? !p.is_test : table && String(p.table_number) !== table) return false;
+      return !hiddenOnly || p.hidden;
+    });
+  }
+  function phPicked() {
+    return (ph.all || []).filter(function (p) { return ph.picked[p.id]; });
+  }
+  function phTile(p) {
+    return '<li class="adm-photo' + (p.hidden ? ' is-hidden' : '') + (ph.picked[p.id] ? ' is-picked' : '') + '">' +
+      '<a class="adm-thumb" href="' + esc(p.url) + '" target="_blank" rel="noopener">' +
+      '<img src="' + esc(p.url) + '" loading="lazy" alt="Photo by ' + esc(phName(p)) + ', ' + esc(phWhen(p.uploaded_at)) + '"></a>' +
+      '<p class="adm-cap"><span class="cam-shot-name">' + esc(phName(p)) + '</span>' +
+      '<span>' + (p.is_test ? 'Test pass' : p.table_number != null ? 'Table ' + esc(p.table_number) : 'No table') +
+      ' · ' + esc(phWhen(p.uploaded_at)) + '</span>' +
+      (p.hidden ? '<span class="cam-state is-no">Hidden</span>' : '') + '</p>' +
+      '<div class="adm-photo-act">' +
+      '<label class="kt-choice"><input type="checkbox" data-pick="' + esc(p.id) + '"' + (ph.picked[p.id] ? ' checked' : '') + '><span>Select</span></label>' +
+      '<button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" data-hide="' + esc(p.id) + '">' + (p.hidden ? 'Show' : 'Hide') + '</button>' +
+      '</div></li>';
+  }
+  function phCount() {
+    var list = phFiltered(), picked = phPicked().length;
+    var hidden = list.filter(function (p) { return p.hidden; }).length;
+    $('photo-count').textContent = list.length + ' photo' + (list.length === 1 ? '' : 's') +
+      (hidden ? ' · ' + hidden + ' hidden' : '') + (picked ? ' · ' + picked + ' selected' : '');
+    $('photo-pick-all').textContent = list.length && list.every(function (p) { return ph.picked[p.id]; }) ? 'Select none' : 'Select all';
+    $('photo-pick-all').disabled = !list.length;
+    if (!ph.ask) {
+      $('photo-save-picked').textContent = picked ? 'Download selected (' + picked + ')' : 'Download selected';
+      $('photo-save-picked').disabled = !picked || ph.busy;
+      $('photo-save-all').textContent = list.length ? 'Download all (' + list.length + ')' : 'Download all';
+      $('photo-save-all').disabled = !list.length || ph.busy;
+    }
+  }
+  function phRender() {
+    var list = phFiltered();
+    $('photos').innerHTML = list.length ? list.slice(0, ph.shown).map(phTile).join('')
+      : '<li class="cam-empty">' + (ph.all.length ? 'No photos match.' : 'No photos yet.') + '</li>';
+    $('photos').hidden = false;
+    $('photo-more-wrap').hidden = list.length <= ph.shown;
+    $('photo-more').textContent = 'Show more (' + (list.length - ph.shown) + ' left)';
+    phCount();
+  }
+  function phTables() {
+    var sel = $('photo-table'), keep = sel.value, seen = {};
+    (ph.all || []).forEach(function (p) { if (!p.is_test && p.table_number != null) seen[p.table_number] = true; });
+    var nums = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+    var hasTest = (ph.all || []).some(function (p) { return p.is_test; });
+    sel.innerHTML = '<option value="">All tables</option>' + nums.map(function (n) {
+      return '<option value="' + n + '">Table ' + n + '</option>';
+    }).join('') + (hasTest ? '<option value="test">Test passes</option>' : '');
+    sel.value = keep;
+    if (sel.value !== keep) sel.value = '';
+  }
+  function loadPhotos() {
+    $('photos-load').disabled = true;
+    return api.admin.photos(key, $('photo-tests').checked).then(function (list) {
+      ph.all = list;
+      var ids = {};
+      list.forEach(function (p) { ids[p.id] = true; });
+      Object.keys(ph.picked).forEach(function (id) { if (!ids[id]) delete ph.picked[id]; });
+      $('photo-tools').hidden = false;
+      $('photo-save-picked').hidden = false;
+      $('photo-save-all').hidden = false;
+      $('photos-load').textContent = 'Refresh photos';
+      phTables(); phRender();
+    }).catch(function (err) { toast(err.message, false); })
+      .then(function () { $('photos-load').disabled = false; });
+  }
+  function phSave(list, zipName, button) {
+    if (ph.busy || !list.length) return;
+    ph.busy = true; phCount();
+    var progress = $('photo-progress');
+    progress.hidden = false; progress.textContent = 'Getting ready…';
+    KT.photoTools.save(list.map(function (p) { return { url: p.url, name: phFile(p), date: new Date(p.uploaded_at) }; }), {
+      zipName: zipName,
+      onProgress: function (done, total, label) { progress.textContent = label + ' ' + done + ' of ' + total + '…'; },
+      ask: function (label) {
+        return new Promise(function (ok) {
+          ph.ask = function () { ph.ask = null; ok(); };
+          button.textContent = label; button.disabled = false;
+          progress.textContent = 'Ready. Tap “' + label + '”.';
+        });
+      }
+    }).then(function (r) {
+      if (r.how === 'cancelled') { toast('Nothing saved.', false); return; }
+      var msg = 'Saved ' + r.saved + ' photo' + (r.saved === 1 ? '' : 's') + (r.how === 'zip' ? ' as .zip' : '') + '.';
+      if (r.failed) msg += ' ' + r.failed + ' didn’t download: press Refresh photos and try again.';
+      toast(msg, r.saved ? true : false);
+    }).catch(function (err) {
+      toast((err && err.message) || 'That didn’t work. Try again?', false);
+    }).then(function () {
+      ph.busy = false; ph.ask = null; progress.hidden = true; phCount();
+    });
+  }
+
+  $('photos-load').addEventListener('click', loadPhotos);
+  $('photo-tests').addEventListener('change', loadPhotos);
+  $('photo-table').addEventListener('change', function () { ph.shown = PAGE; phRender(); });
+  $('photo-hidden-only').addEventListener('change', function () { ph.shown = PAGE; phRender(); });
+  $('photo-more').addEventListener('click', function () { ph.shown += PAGE; phRender(); });
+  $('photo-pick-all').addEventListener('click', function () {
+    var list = phFiltered(), all = list.every(function (p) { return ph.picked[p.id]; });
+    list.forEach(function (p) { if (all) delete ph.picked[p.id]; else ph.picked[p.id] = true; });
+    phRender();
+  });
+  $('photos').addEventListener('change', function (ev) {
+    var id = ev.target.getAttribute('data-pick');
+    if (!id) return;
+    if (ev.target.checked) ph.picked[id] = true; else delete ph.picked[id];
+    ev.target.closest('.adm-photo').classList.toggle('is-picked', ev.target.checked);
+    phCount();
+  });
+  $('photos').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-hide]');
+    if (!b) return;
+    var p = (ph.all || []).filter(function (x) { return String(x.id) === b.dataset.hide; })[0];
+    if (!p) return;
+    b.disabled = true;
+    api.admin.hidePhoto(key, p.id, !p.hidden).then(function (r) {
+      p.hidden = r.hidden;
+      toast(r.hidden ? 'Hidden from the guest gallery.' : 'Back in the guest gallery.');
+      phRender();
+    }).catch(function (err) { b.disabled = false; toast(err.message, false); });
+  });
+  $('photo-save-picked').addEventListener('click', function () {
+    if (ph.ask) return ph.ask();
+    phSave(phPicked(), 'KT1121-selected', this);
+  });
+  $('photo-save-all').addEventListener('click', function () {
+    if (ph.ask) return ph.ask();
+    var list = phFiltered(), t = $('photo-table').value;
+    if (list.length > 100 && !confirm('Download ' + list.length + ' photos? They come as .zip files of 100 each; keep this tab open until they’re done.')) return;
+    phSave(list, 'KT1121-photos' + (t === 'test' ? '-test' : t ? '-table-' + t : ''), this);
   });
 
   /* ----------------------------------------------------------- rehearsal -- */

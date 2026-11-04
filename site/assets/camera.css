@@ -33,3 +33,29 @@
 .gal-grid a { display: block; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-sm); background: var(--surface-sunk); }
 .gal-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gal-grid a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Gallery: choosing photos to save */
+.gal-grid li { position: relative; }
+.gal-tool-btns { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.gal-check { display: none; position: absolute; inset: 0; cursor: pointer; border-radius: var(--radius-sm); }
+.gal-grid.is-selecting .gal-check { display: block; }
+.gal-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.gal-check span {
+  position: absolute; top: var(--space-2); right: var(--space-2);
+  width: 26px; height: 26px; border-radius: 50%; box-sizing: border-box;
+  border: 2px solid var(--brand); background: var(--surface);
+  display: grid; place-items: center; font-size: 14px; font-weight: 700; color: var(--on-brand);
+}
+.gal-check input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+.gal-grid li.is-picked .gal-check { box-shadow: inset 0 0 0 3px var(--brand); }
+.gal-grid li.is-picked .gal-check span { background: var(--brand); }
+.gal-grid li.is-picked .gal-check span::before { content: "✓"; }
+.gal-grid li.is-picked img { opacity: .8; }
+.gal-bar {
+  position: sticky; bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4); background: var(--surface);
+  border: 1px solid var(--rule); border-radius: var(--radius-sm); box-shadow: var(--shadow-card);
+}
+.gal-bar .kt-hint { margin: 0; }
+.gal-msg:empty { display: none; }

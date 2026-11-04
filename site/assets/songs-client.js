@@ -128,7 +128,13 @@
         makeTestPasses: function (key, count) { return rpc('admin_make_test_passes', { p_key: key, p_count: count }); },
         resetTestPass: function (key, token) { return fn({ action: 'purge', key: key, what: 'test_pass', token: token }, 'camera'); },
         deleteTestPasses: function (key) { return fn({ action: 'purge', key: key, what: 'test_passes' }, 'camera'); },
-        clearSongs: function (key, confirmWord) { return rpc('admin_clear_songs', { p_key: key, p_confirm: confirmWord }); }
+        clearSongs: function (key, confirmWord) { return rpc('admin_clear_songs', { p_key: key, p_confirm: confirmWord }); },
+        // Every uploaded photo with who took it and a signed link (1 hour).
+        photos: function (key, includeTests) {
+          return fn({ action: 'admin_photos', key: key, include_tests: !!includeTests }, 'camera')
+            .then(function (r) { return r.photos; });
+        },
+        hidePhoto: function (key, id, hidden) { return rpc('admin_hide_photo', { p_key: key, p_photo_id: id, p_hidden: !!hidden }); }
       },
       // Disposable camera. Every call needs a guest session: the pass the
       // phone claimed is the camera's identity.
@@ -184,6 +190,42 @@
   function saveCam(c) { try { localStorage.setItem(CAM_KEY, JSON.stringify(c)); } catch (e) {} }
   function demoTests() {
     try { return JSON.parse(localStorage.getItem('kt-rehearsal-demo')) || []; } catch (e) { return []; }
+  }
+  // Demo photos: drawn on a canvas as real JPEGs, so saving and zipping them
+  // can be rehearsed. Hidden ones are remembered in this browser.
+  var DEMO_GUESTS = [['Dora', 'Day', 5], ['Josephine', 'March', 2], ['Felix', 'Ortega', 9], ['Ana', 'Lind', 14],
+    ['Theo', 'Park', 1], ['Mira', 'Novak', 7], ['Sam', 'Reyes', 11], ['Ivy', 'Chen', 3]];
+  var demoPhotoCache = null;
+  function demoPhotoUrl(i) {
+    try {
+      var c = document.createElement('canvas'); c.width = 640; c.height = 480;
+      var g = c.getContext('2d'), hue = (i * 47) % 360;
+      var grad = g.createLinearGradient(0, 0, 640, 480);
+      grad.addColorStop(0, 'hsl(' + hue + ',45%,32%)'); grad.addColorStop(1, 'hsl(' + ((hue + 60) % 360) + ',55%,62%)');
+      g.fillStyle = grad; g.fillRect(0, 0, 640, 480);
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '64px Georgia, serif'; g.textAlign = 'center';
+      g.fillText('Demo ' + (i + 1), 320, 260);
+      return c.toDataURL('image/jpeg', 0.8);
+    } catch (e) { return ''; }
+  }
+  function demoPhotoHidden() {
+    try { return JSON.parse(localStorage.getItem('kt-photos-demo-hidden')) || {}; } catch (e) { return {}; }
+  }
+  function demoPhotos(includeTests) {
+    if (!demoPhotoCache) {
+      var start = Date.parse('2026-11-21T18:05:00-08:00');
+      demoPhotoCache = [];
+      for (var i = 0; i < 26; i++) {
+        var test = i >= 24, who = test ? ['Test Guest', String(i - 23), null] : DEMO_GUESTS[i % DEMO_GUESTS.length];
+        demoPhotoCache.push({ id: 'demo-photo-' + i, path: 'demo-photo-' + i + '.jpg', url: demoPhotoUrl(i),
+          uploaded_at: new Date(start + i * 9 * 60000).toISOString(), bytes: 80000,
+          first_name: who[0], last_name: who[1], table_number: who[2], is_test: test });
+      }
+      demoPhotoCache.reverse();
+    }
+    var hidden = demoPhotoHidden();
+    return demoPhotoCache.filter(function (p) { return includeTests || !p.is_test; })
+      .map(function (p) { return Object.assign({}, p, { hidden: !!hidden[p.id] }); });
   }
   function demoFeatures() {
     var f = null;
@@ -435,6 +477,17 @@
         clearSongs: function (key, confirmWord) {
           if (confirmWord !== 'CLEAR') return fail('not_confirmed', 'Type CLEAR to empty the song board.');
           return admin(key, function (s) { var n = s.requests.length; s.requests = []; return { removed: n }; });
+        },
+        photos: function (key, includeTests) {
+          return admin(key, function () { return demoPhotos(includeTests); });
+        },
+        hidePhoto: function (key, id, hidden) {
+          return admin(key, function () {
+            var h = demoPhotoHidden();
+            if (hidden) h[id] = true; else delete h[id];
+            try { localStorage.setItem('kt-photos-demo-hidden', JSON.stringify(h)); } catch (e) {}
+            return { id: id, hidden: !!hidden };
+          });
         }
       },
       // Demo camera: the same rules, kept in localStorage. Uploads "fail"
@@ -479,7 +532,8 @@
         gallery: function () {
           var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(cam().reveal_at || DEMO_REVEAL);
           if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
-          return later({ ok: true, photos: [] });
+          return later({ ok: true, photos: demoPhotos(false).filter(function (p) { return !p.hidden; })
+            .map(function (p) { return { path: p.path, url: p.url }; }) });
         }
       },
       // Demo pass: a sample guest once a ?pass= link was opened. The Wallet
@@ -526,7 +580,7 @@
       request: down, vote: down,
       admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
                features: down, setFeature: down, setCamera: down, rehearsal: down, makeTestPasses: down,
-               resetTestPass: down, deleteTestPasses: down, clearSongs: down },
+               resetTestPass: down, deleteTestPasses: down, clearSongs: down, photos: down, hidePhoto: down },
       camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down },
       wallet: { card: down, appleUrl: function () { return '#'; } } });
   };
