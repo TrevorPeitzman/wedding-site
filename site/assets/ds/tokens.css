@@ -1,0 +1,100 @@
+/* Katarina & Trevor — generated from tokens.json */
+:root, [data-theme="terrace"] {
+  --ground: #F1F0F0;
+  --surface: #FBFBFB;
+  --surface-sunk: #E6E5E6;
+  --rule: #D3D6DE;
+  --border: #7A849B;
+  --text: #1F51A0;
+  --text-muted: #4A5F86;
+  --ink: #23252A;
+  --brand: #1F51A0;
+  --brand-hover: #173F80;
+  --on-brand: #FFFFFF;
+  --link: #1F51A0;
+  --cobalt: #1F51A0;
+  --french-blue: #8099CC;
+  --french-blue-wash: #DFE5F2;
+  --on-french-blue: #1B2233;
+  --raspberry: #D294A4;
+  --raspberry-deep: #A2506A;
+  --olive: #B5C1AF;
+  --olive-deep: #4F5E45;
+  --brass: #B08D57;
+  --brass-deep: #7A5F33;
+  --success: var(--olive-deep);
+  --warning: var(--brass-deep);
+  --danger: #A2506A;
+  --info: var(--brand);
+  --focus: #1F51A0;
+  --scrim: rgba(26,23,21,0.55);
+  --qr-ground: #FFFFFF;
+  --qr-ink: #23252A;
+  --shadow-card: 0 1px 2px rgba(31,81,160,0.06), 0 8px 24px rgba(31,81,160,0.07);
+  --shadow-none: none;
+}
+[data-theme="finery"] {
+  --ground: #1A1715;
+  --surface: #26211C;
+  --surface-sunk: #12100E;
+  --rule: #3A342D;
+  --border: #7A6F62;
+  --text: #EEE8DF;
+  --text-muted: #B3A99B;
+  --ink: #EEE8DF;
+  --brand: #D294A4;
+  --brand-hover: #E2AEBC;
+  --on-brand: #2A1C20;
+  --link: #9FB2DE;
+  --cobalt: #1F51A0;
+  --french-blue: #8099CC;
+  --french-blue-wash: #2A3245;
+  --on-french-blue: #1B2233;
+  --raspberry: #D294A4;
+  --raspberry-deep: #E7A3B4;
+  --olive: #B5C1AF;
+  --olive-deep: #B5C1AF;
+  --brass: #B08D57;
+  --brass-deep: #D9B77A;
+  --success: var(--olive-deep);
+  --warning: var(--brass-deep);
+  --danger: #F0A48C;
+  --info: #9FB2DE;
+  --focus: #E2AEBC;
+  --scrim: rgba(0,0,0,0.65);
+  --qr-ground: #FFFFFF;
+  --qr-ink: #23252A;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.4), 0 10px 28px rgba(0,0,0,0.35);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-ticket: 14px;
+  --radius-pill: 999px;
+  --font-script: "Adora Bouton", "Libre Baskerville", Georgia, serif;
+  --font-serif: "Libre Baskerville", Baskerville, Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+.script-xl { font-family: var(--font-script); font-size: 64px; line-height: 1.15; font-weight: 400; }
+.script-lg { font-family: var(--font-script); font-size: 48px; line-height: 1.2; font-weight: 400; }
+.script-md { font-family: var(--font-script); font-size: 34px; line-height: 1.25; font-weight: 400; }
+.heading-1 { font-family: var(--font-serif); font-size: 28px; line-height: 1.25; font-weight: 700; }
+.heading-2 { font-family: var(--font-serif); font-size: 22px; line-height: 1.3; font-weight: 700; }
+.heading-3 { font-family: var(--font-serif); font-size: 18px; line-height: 1.4; font-weight: 700; }
+.body-lg { font-family: var(--font-serif); font-size: 18px; line-height: 1.65; font-weight: 400; }
+.body { font-family: var(--font-serif); font-size: 16px; line-height: 1.65; font-weight: 400; }
+.body-sm { font-family: var(--font-serif); font-size: 14px; line-height: 1.55; font-weight: 400; }
+.caps { font-family: var(--font-serif); font-size: 12px; line-height: 1.4; font-weight: 400; letter-spacing: 0.2em; }
+.caps-lg { font-family: var(--font-serif); font-size: 14px; line-height: 1.4; font-weight: 700; letter-spacing: 0.16em; }
+.pass-data { font-family: var(--font-mono); font-size: 15px; line-height: 1.3; font-weight: 600; letter-spacing: 0.04em; }
+.pass-code { font-family: var(--font-mono); font-size: 32px; line-height: 1; font-weight: 700; letter-spacing: 0.02em; }
+@font-face { font-family: "Adora Bouton"; src: url("fonts/AdoraBouton-Regular.ttf"); font-weight: 400; font-style: normal; font-display: swap; }
