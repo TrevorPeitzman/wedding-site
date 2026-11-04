@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="terrace">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Song requests · Katarina &amp; Trevor</title>
+  <meta name="description" content="Request songs for the dance floor and vote for other guests' picks.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F1F0F0">
+  <link rel="icon" href="/assets/img/crest-cobalt.webp" type="image/webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="/assets/ds/fonts/AdoraBouton-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <script src="/assets/theme.js"></script>
+  <link rel="stylesheet" href="/assets/ds/tokens.css">
+  <link rel="stylesheet" href="/assets/ds/components.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/songs.css">
+  <script src="/assets/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+  <script src="/assets/songs-client.js" defer></script>
+  <script src="/assets/songs.js" defer></script>
+</head>
+<body class="kt-root">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/schedule/">Schedule</a></li>
+          <li><a href="/details/">Details</a></li>
+          <li><a href="/songs/" aria-current="page">Songs</a></li>
+        </ul>
+      </nav>
+      <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.2A7 7 0 1 0 16.8 13 5.6 5.6 0 0 1 13.5 3.2Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span class="theme-word">Night</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="page">
+    <header class="kt-title kt-title-lg">
+      <span class="kt-title-eyebrow">On the dance floor</span>
+      <h1 class="kt-title-script">Song requests</h1>
+      <hr class="kt-title-rule" aria-hidden="true">
+      <p class="kt-title-sub">Ask for what you want to hear, then vote for the songs you love. Our DJ sees the most-wanted songs first.</p>
+    </header>
+
+    <div class="stack">
+      <div class="kt-notice kt-notice-info" id="demo-note" role="status" hidden>
+        <span class="kt-notice-mark" aria-hidden="true">i</span>
+        <span class="kt-notice-title">Demo mode</span>
+        <p class="kt-notice-body">This board isn’t connected yet, so requests stay on this phone.</p>
+      </div>
+
+      <noscript>
+        <div class="kt-notice kt-notice-warning">
+          <span class="kt-notice-mark" aria-hidden="true">!</span>
+          <span class="kt-notice-title">Heads up</span>
+          <p class="kt-notice-body">Song requests need JavaScript. Everything else on this site works without it.</p>
+        </div>
+      </noscript>
+
+      <div class="kt-notice kt-notice-warning" id="closed-note" role="status" hidden>
+        <span class="kt-notice-mark" aria-hidden="true">!</span>
+        <span class="kt-notice-title">Requests are closed</span>
+        <p class="kt-notice-body">You can still vote for the songs already on the list.</p>
+      </div>
+
+      <section class="kt-card" id="ask" aria-labelledby="ask-title" hidden>
+        <h2 class="kt-card-title" id="ask-title">Request a song</h2>
+        <div class="kt-card-body stack">
+          <div class="kt-field">
+            <label class="kt-label" for="q">Search for a song</label>
+            <input class="kt-input" id="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false"
+                   placeholder="Song title or artist" aria-describedby="search-msg" aria-controls="results">
+            <p class="kt-hint" id="search-msg" aria-live="polite"></p>
+          </div>
+          <ul class="song-results" id="results" aria-label="Search results" hidden></ul>
+
+          <details class="song-manual">
+            <summary>Can’t find it? Type it in.</summary>
+            <form class="stack" id="manual-form">
+              <div class="kt-field">
+                <label class="kt-label" for="m-title">Song title</label>
+                <input class="kt-input" id="m-title" maxlength="200" autocomplete="off" required>
+              </div>
+              <div class="kt-field">
+                <label class="kt-label" for="m-artist">Artist</label>
+                <input class="kt-input" id="m-artist" maxlength="200" autocomplete="off" required>
+              </div>
+              <div><button class="kt-btn kt-btn-secondary" type="submit">Add to the list</button></div>
+            </form>
+          </details>
+
+          <div class="kt-field" id="name-field">
+            <label class="kt-label" for="name">Your name <span class="kt-opt">(optional)</span></label>
+            <input class="kt-input" id="name" maxlength="60" autocomplete="given-name" aria-describedby="name-hint">
+            <p class="kt-hint" id="name-hint">So the DJ knows who asked.</p>
+          </div>
+          <p class="body-sm" id="pass-name" hidden>Requesting as <strong></strong></p>
+        </div>
+      </section>
+
+      <section class="stack" aria-labelledby="list-title">
+        <h2 class="section-title" id="list-title">On the list</h2>
+        <ol class="song-board" id="board" aria-live="off" aria-busy="true">
+          <li class="song-empty">Loading the list…</li>
+        </ol>
+        <p class="kt-hint center" id="rules-note"></p>
+      </section>
+    </div>
+  </main>
+
+  <div class="song-toast" id="toast" aria-live="polite" aria-atomic="true"></div>
+
+  <footer class="site-footer">
+    <p>Katarina &amp; Trevor</p>
+    <p>Saturday, November 21, 2026 · The Linden Club, Long Beach</p>
+  </footer>
+</body>
+</html>

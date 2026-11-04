@@ -1,0 +1,15 @@
+# Runs the Supabase migrations and SQL tests against a throwaway Postgres.
+name: Database tests
+
+on:
+  push:
+    paths: ['supabase/**', '.github/workflows/tests.yml']
+  pull_request:
+    paths: ['supabase/**', '.github/workflows/tests.yml']
+
+jobs:
+  sql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: supabase/tests/run.sh

@@ -7,6 +7,21 @@
   var KT = window.KT || {};
   var root = document.documentElement;
 
+  /* ---------- Boarding pass link ----------
+   * The QR on each printed pass opens a page with ?pass=<token>. Keep the
+   * token on this phone (the song board and, later, the camera claim it) and
+   * take it out of the address bar so it isn't shared by accident. */
+  try {
+    var params = new URLSearchParams(location.search);
+    var pass = params.get('pass');
+    if (pass && /^[A-Za-z0-9_-]{6,128}$/.test(pass)) {
+      localStorage.setItem('kt-pass', pass);
+      params.delete('pass');
+      var rest = params.toString();
+      history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+    }
+  } catch (e) {}
+
   /* ---------- Theme toggle ---------- */
   var toggle = document.querySelector('.theme-toggle');
   function paintToggle() {

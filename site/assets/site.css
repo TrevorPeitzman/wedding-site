@@ -4,6 +4,9 @@
    design system). This file only arranges them; it introduces no new colors. */
 
 *, *::before, *::after { box-sizing: border-box; }
+/* The design system gives cards, fields and notices display:grid, which would
+   otherwise beat the hidden attribute. */
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { min-height: 100vh; display: flex; flex-direction: column; }
 img { max-width: 100%; height: auto; }

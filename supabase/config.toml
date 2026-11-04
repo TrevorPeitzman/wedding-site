@@ -1,0 +1,10 @@
+# Supabase CLI settings for local development (`supabase start`).
+# The hosted project is configured in its dashboard; see supabase/README.md.
+project_id = "wedding-site"
+
+[auth]
+# Guests are anonymous Supabase users, one per phone.
+enable_anonymous_sign_ins = true
+
+[functions.songs]
+verify_jwt = true
