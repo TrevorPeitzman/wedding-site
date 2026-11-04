@@ -1,8 +1,6 @@
 # Katarina & Trevor — event web app
 
-A mobile-first site for one evening: Katarina and Trevor's **vow renewal**,
-Saturday 21 November 2026, 5:00–11:00 PM PST, The Linden Club, 3636 Linden
-Ave, Long Beach, CA 90807. Domain: **wedding.peitzman.net**.
+A mobile-first site for one evening: Katarina and Trevor's wedding. Domain: **wedding.peitzman.net**.
 
 Guests reach it from the QR on their printed boarding pass, which they first
 receive **during cocktail hour** (and later NFC placards), mostly in a dark
@@ -125,7 +123,7 @@ wedding-song-requests/      original FastAPI prototype (reference only)
 
 ## Phased plan
 
-The event is **21 November 2026**. Each phase ends with something usable.
+The event is on a fast-approaching date. Each phase ends with something usable.
 The roadmap drawing is in the Event Webapp Plan doc.
 
 ### 1. Foundations ✅ (Nov 4)
