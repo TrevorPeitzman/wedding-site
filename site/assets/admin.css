@@ -1,0 +1,14 @@
+/* Organizer screen. Tokens only. */
+
+.adm-feature { gap: var(--space-4); }
+.adm-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.adm-head .kt-card-title { font-size: 18px; }
+.adm-state {
+  font-size: 12px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; white-space: nowrap;
+  color: var(--text-muted);
+}
+.adm-state.is-open { color: var(--success); }
+.adm-state.is-soon { color: var(--warning); }
+.adm-state.is-off { color: var(--danger); }
+.adm-times { display: grid; grid-template-columns: repeat(auto-fit, minmax(13em, 1fr)); gap: var(--space-4); }
+.adm-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }

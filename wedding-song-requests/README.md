@@ -1,8 +1,9 @@
 # Wedding Song Requests
 
-> **Superseded.** This FastAPI prototype has been ported to Supabase + static
-> pages: see `supabase/` and `site/songs/` at the repo root. It stays here as a
-> reference for the rules and the Spotify setup until the new version is live.
+> **Superseded.** This FastAPI prototype was ported to Supabase + static
+> pages (`supabase/` and `site/songs/` at the repo root), which are live. It
+> stays only as a reference for the rules, the Spotify app setup and the DJ
+> questions in DESIGN.md; nothing here is deployed.
 
 A guest-facing song request board. Guests search for a song, put it on the
 list, and upvote each other's picks so the loudest wishes float to the top.

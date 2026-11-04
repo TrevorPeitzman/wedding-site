@@ -48,6 +48,15 @@
   }
 
   /* ------------------------------------------------------- board -- */
+
+  // A title that opens the track in Spotify (its app, if installed: Spotify's
+  // track links are universal links). Demo-catalog ids aren't real tracks.
+  function titleHtml(r) {
+    var id = r.spotify_id || '';
+    if (!/^[A-Za-z0-9]{22}$/.test(id) || /^demo/.test(id)) return esc(r.title);
+    return '<a class="song-link" href="https://open.spotify.com/track/' + id + '" target="_blank" rel="noopener">' +
+      esc(r.title) + '<span class="visually-hidden"> (opens in Spotify)</span></a>';
+  }
   var CHEVRON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 5.5l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var NOTE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6.5" cy="17.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16.5" cy="15.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
@@ -70,7 +79,7 @@
     return '<li class="song-row' + (played ? ' is-played' : '') + '">' +
       '<span class="song-rank" aria-hidden="true">' + (played ? '' : i + 1) + '</span>' +
       art(r.artwork_url) +
-      '<div class="song-meta"><p class="song-title">' + esc(r.title) + '</p>' +
+      '<div class="song-meta"><p class="song-title">' + titleHtml(r) + '</p>' +
       '<p class="song-artist">' + esc(r.artist) + '</p>' +
       (r.requester_name ? '<p class="song-by">Asked for by ' + esc(r.requester_name) + '</p>' : '') +
       (played ? '<p class="visually-hidden">' + esc(votes) + '</p>' : '') +
