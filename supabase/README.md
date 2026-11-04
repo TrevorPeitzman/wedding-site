@@ -32,8 +32,10 @@ phone, enforced by a unique index.
    pass the free plan's 1 GB, and free projects pause when idle). Downgrade
    after the photos are exported.
 2. **Database:** link the repo with Supabase's GitHub integration so pushes to
-   `main` apply `migrations/` (see `DEPLOY.md`). Without it: run each file in
-   `migrations/`, oldest first, in the SQL editor, or `supabase db push`.
+   `main` apply `migrations/` (see `DEPLOY.md`: the working directory is `.`,
+   and the first deploy happens on the next merge to `main`). Without it: run
+   each file in `migrations/`, oldest first, in the SQL editor, or
+   `supabase db push`. Check Database → Migrations before step 3.
 3. **DJ key:** in the SQL editor, with a long random string of your own:
    ```sql
    select app_private.set_admin_key('<long random string>');

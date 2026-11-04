@@ -16,24 +16,33 @@ timestamped files in `supabase/migrations/`.
 
 1. Supabase dashboard → Project Settings → Integrations → GitHub → connect,
    and pick `TrevorPeitzman/wedding-site`.
-2. Supabase directory: `supabase`. Turn on **Deploy to production** for branch
-   `main`. Leave **Automatic branching** off: preview branches are billed
-   separately, and one event doesn't need them.
-3. Let the integration apply the migrations on the next push to `main`,
-   rather than pasting them into the SQL editor. If you already pasted the
-   first one, that's fine: it is safe to apply twice.
-4. From then on, a database change is a new file in `supabase/migrations/`.
+2. **Working directory: `.`** (a single dot). It is the folder that *contains*
+   `supabase/`, which here is the repo root. Entering `supabase` makes the
+   integration look in `supabase/supabase/` and silently deploy nothing.
+3. Turn on **Deploy to production** for branch `main`. Leave **Automatic
+   branching** off: preview branches are billed separately, and one event
+   doesn't need them.
+4. The integration deploys **only when something is pushed or merged to
+   `main` after it is enabled**. If it was set up after the last merge, the
+   next merge triggers the first deploy. It applies new files in
+   `supabase/migrations/` and deploys the Edge Functions declared in
+   `supabase/config.toml` (`songs` is). Auth and API settings in that file are
+   ignored: set those in the dashboard.
+5. Check it worked: Database → Migrations should list
+   `20261104000000_song_requests` and `20261105000000_pass_details`. Only then
+   run the DJ key command below.
+6. From then on, a database change is a new file in `supabase/migrations/`.
    Never edit one that has already been applied: it won't run again.
 
 Still manual, because they're secrets or private data: the DJ key
 (`select app_private.set_admin_key(...)`), the Spotify secrets, and loading
 guests (`scripts/import_passes.py`, then run `private/passes.sql`).
 
-**Edge Functions: the `Deploy functions` workflow.** Add repository secrets
-`SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF` (instructions at the top of
-`.github/workflows/functions.yml`), and every change to `supabase/functions/`
-on `main` deploys. If your integration screen says it deploys functions too,
-you can skip these secrets.
+**Edge Functions** deploy through the integration (step 4). The `Deploy
+functions` workflow is a fallback if you don't use the integration: add
+repository secrets `SUPABASE_ACCESS_TOKEN` (a scoped token) and
+`SUPABASE_PROJECT_REF`, and every change to `supabase/functions/` on `main`
+deploys. With both set up, a function just deploys twice, which is harmless.
 
 ## 2. GitHub Pages
 
