@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="terrace">
+<html lang="en" data-theme="terrace" data-page-feature="songs">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="/assets/ds/fonts/AdoraBouton-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <script src="/assets/theme.js"></script>
+  <script src="/assets/features.js"></script>
   <link rel="stylesheet" href="/assets/ds/tokens.css">
   <link rel="stylesheet" href="/assets/ds/components.css">
   <link rel="stylesheet" href="/assets/site.css">
@@ -29,9 +30,9 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="/">Home</a></li>
-          <li><a href="/schedule/">Schedule</a></li>
-          <li><a href="/details/">Details</a></li>
-          <li><a href="/songs/" aria-current="page">Songs</a></li>
+          <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
+          <li data-feature="details"><a href="/details/">Details</a></li>
+          <li data-feature="songs"><a href="/songs/" aria-current="page">Songs</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -70,7 +71,13 @@
         <p class="kt-notice-body">You can still vote for the songs already on the list.</p>
       </div>
 
-      <section class="kt-card" id="ask" aria-labelledby="ask-title" hidden>
+      <div class="kt-notice kt-notice-info" role="status" data-until="songs">
+        <span class="kt-notice-mark" aria-hidden="true">i</span>
+        <span class="kt-notice-title">Opening soon</span>
+        <p class="kt-notice-body">Song requests open at <span data-opens="songs">a time we’ll share soon</span>. This page will open on its own.</p>
+      </div>
+
+      <section class="kt-card" id="ask" aria-labelledby="ask-title" data-requires="songs" hidden>
         <h2 class="kt-card-title" id="ask-title">Request a song</h2>
         <div class="kt-card-body stack">
           <div class="kt-field">
@@ -105,7 +112,7 @@
         </div>
       </section>
 
-      <section class="stack" aria-labelledby="list-title">
+      <section class="stack" aria-labelledby="list-title" data-requires="songs">
         <h2 class="section-title" id="list-title">On the list</h2>
         <ol class="song-board" id="board" aria-live="off" aria-busy="true">
           <li class="song-empty">Loading the list…</li>

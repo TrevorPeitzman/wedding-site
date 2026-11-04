@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Guest data: names, pass tokens, workbooks. Never commit.
+private/
+*.xlsx

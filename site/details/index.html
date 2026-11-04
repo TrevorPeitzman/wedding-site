@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="terrace">
+<html lang="en" data-theme="terrace" data-page-feature="details">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="/assets/ds/fonts/AdoraBouton-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <script src="/assets/theme.js"></script>
+  <script src="/assets/features.js"></script>
   <link rel="stylesheet" href="/assets/ds/tokens.css">
   <link rel="stylesheet" href="/assets/ds/components.css">
   <link rel="stylesheet" href="/assets/site.css">
@@ -24,9 +25,9 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="/">Home</a></li>
-          <li><a href="/schedule/">Schedule</a></li>
-          <li><a href="/details/" aria-current="page">Details</a></li>
-          <li><a href="/songs/">Songs</a></li>
+          <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
+          <li data-feature="details"><a href="/details/" aria-current="page">Details</a></li>
+          <li data-feature="songs"><a href="/songs/">Songs</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -84,7 +85,7 @@
             <dd>Dinner and dancing in the Uptown Ballroom</dd>
           </dl>
         </div>
-        <div class="kt-card-actions">
+        <div class="kt-card-actions" data-feature="schedule">
           <a class="kt-btn kt-btn-primary" href="/schedule/">Schedule and map</a>
         </div>
       </section>
@@ -146,8 +147,12 @@
       <section class="kt-card kt-card-flat">
         <p class="kt-card-eyebrow">On the night</p>
         <h2 class="kt-card-title">Bring your phone</h2>
-        <div class="kt-card-body">
-          <p>This site is part of the party: <a class="kt-link" href="/songs/">request songs</a> for the dance floor, and on the night, take a few photos for us with the disposable camera.</p>
+        <div class="kt-card-body stack">
+          <p>This site is part of the party.</p>
+          <ul class="stack" style="margin:0;padding-left:1.2em">
+            <li data-feature="songs"><a class="kt-link" href="/songs/">Request songs</a> for the dance floor.</li>
+            <li data-feature="camera">Take a few photos for us with the disposable camera.</li>
+          </ul>
         </div>
       </section>
     </div>

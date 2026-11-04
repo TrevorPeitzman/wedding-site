@@ -3,13 +3,13 @@ name: Database tests
 
 on:
   push:
-    paths: ['supabase/**', '.github/workflows/tests.yml']
+    paths: ['supabase/**', 'tests/sql/**', '.github/workflows/tests.yml']
   pull_request:
-    paths: ['supabase/**', '.github/workflows/tests.yml']
+    paths: ['supabase/**', 'tests/sql/**', '.github/workflows/tests.yml']
 
 jobs:
   sql:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: supabase/tests/run.sh
+      - run: tests/sql/run.sh

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="terrace">
+<html lang="en" data-theme="terrace" data-page-feature="schedule">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="/assets/ds/fonts/AdoraBouton-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <script src="/assets/theme.js"></script>
+  <script src="/assets/features.js"></script>
   <link rel="stylesheet" href="/assets/ds/tokens.css">
   <link rel="stylesheet" href="/assets/ds/components.css">
   <link rel="stylesheet" href="/assets/site.css">
@@ -24,9 +25,9 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="/">Home</a></li>
-          <li><a href="/schedule/" aria-current="page">Schedule</a></li>
-          <li><a href="/details/">Details</a></li>
-          <li><a href="/songs/">Songs</a></li>
+          <li data-feature="schedule"><a href="/schedule/" aria-current="page">Schedule</a></li>
+          <li data-feature="details"><a href="/details/">Details</a></li>
+          <li data-feature="songs"><a href="/songs/">Songs</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -73,7 +74,7 @@
           <div class="kt-tl-content">
             <h3 class="kt-tl-title">Dinner and dancing</h3>
             <p class="kt-tl-room">Uptown Ballroom</p>
-            <p class="kt-tl-note"><a class="kt-link" href="/songs/">Request a song</a> for the dance floor.</p>
+            <p class="kt-tl-note" data-feature="songs"><a class="kt-link" href="/songs/">Request a song</a> for the dance floor.</p>
           </div>
         </li>
         <li class="kt-tl-item" data-start="2026-11-21T22:30:00-08:00" data-room="ballroom">

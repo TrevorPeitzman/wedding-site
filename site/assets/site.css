@@ -7,6 +7,21 @@
 /* The design system gives cards, fields and notices display:grid, which would
    otherwise beat the hidden attribute. */
 [hidden] { display: none !important; }
+
+/* Feature switches and timed release (assets/features.js sets these classes
+   on <html>). Add a line to each group when a new feature is added. */
+.kt-off-schedule [data-feature~="schedule"],
+.kt-off-details [data-feature~="details"],
+.kt-off-songs [data-feature~="songs"],
+.kt-off-camera [data-feature~="camera"],
+.kt-off-wallet [data-feature~="wallet"],
+.kt-off-songs [data-requires~="songs"], .kt-soon-songs [data-requires~="songs"],
+.kt-off-camera [data-requires~="camera"], .kt-soon-camera [data-requires~="camera"],
+.kt-off-wallet [data-requires~="wallet"], .kt-soon-wallet [data-requires~="wallet"],
+html:not(.kt-soon-songs) [data-until~="songs"],
+html:not(.kt-soon-camera) [data-until~="camera"],
+html:not(.kt-soon-wallet) [data-until~="wallet"] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 body { min-height: 100vh; display: flex; flex-direction: column; }
 img { max-width: 100%; height: auto; }

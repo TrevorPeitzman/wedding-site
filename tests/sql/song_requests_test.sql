@@ -1,5 +1,5 @@
 -- Song request rules, exercised through the same roles the browser and the
--- Edge Function use. Run with supabase/tests/run.sh.
+-- Edge Function use. Run with tests/sql/run.sh.
 \set ON_ERROR_STOP 1
 
 create schema t;

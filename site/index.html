@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="/assets/ds/fonts/AdoraBouton-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <script src="/assets/theme.js"></script>
+  <script src="/assets/features.js"></script>
   <link rel="stylesheet" href="/assets/ds/tokens.css">
   <link rel="stylesheet" href="/assets/ds/components.css">
   <link rel="stylesheet" href="/assets/site.css">
@@ -24,9 +25,9 @@
       <nav class="site-nav" aria-label="Main">
         <ul>
           <li><a href="/" aria-current="page">Home</a></li>
-          <li><a href="/schedule/">Schedule</a></li>
-          <li><a href="/details/">Details</a></li>
-          <li><a href="/songs/">Songs</a></li>
+          <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
+          <li data-feature="details"><a href="/details/">Details</a></li>
+          <li data-feature="songs"><a href="/songs/">Songs</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -56,7 +57,7 @@
     <div class="kt-divider" role="separator"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 2 L15 9 L9 16 L3 9 Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="9" cy="9" r="1.6" fill="currentColor"/></svg></div>
 
     <div class="stack">
-      <section class="kt-card">
+      <section class="kt-card" data-feature="schedule">
         <p class="kt-card-eyebrow">The evening</p>
         <h2 class="kt-card-title">Schedule</h2>
         <div class="kt-card-body">
@@ -67,7 +68,7 @@
         </div>
       </section>
 
-      <section class="kt-card">
+      <section class="kt-card" data-feature="details">
         <p class="kt-card-eyebrow">Before you go</p>
         <h2 class="kt-card-title">Venue and dress code</h2>
         <div class="kt-card-body">
@@ -78,7 +79,7 @@
         </div>
       </section>
 
-      <section class="kt-card">
+      <section class="kt-card" data-feature="songs">
         <p class="kt-card-eyebrow">On the dance floor</p>
         <h2 class="kt-card-title">Song requests</h2>
         <div class="kt-card-body">
@@ -89,7 +90,7 @@
         </div>
       </section>
 
-      <section class="kt-card kt-card-flat">
+      <section class="kt-card kt-card-flat" data-feature="camera">
         <p class="kt-card-eyebrow">On the night</p>
         <h2 class="kt-card-title">Disposable camera</h2>
         <div class="kt-card-body stack">

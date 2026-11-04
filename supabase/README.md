@@ -7,7 +7,8 @@ on GitHub Pages and talk to this project directly.
 ```
 migrations/   schema + every rule, as Postgres functions (the only API)
 functions/    songs: Spotify search and song submission (Edge Function)
-tests/        run.sh: migrations + SQL tests on a throwaway local Postgres
+
+tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 ```
 
 ## How it fits together
@@ -30,8 +31,9 @@ phone, enforced by a unique index.
 1. Create a project at supabase.com. Plan: **Pro** for November (photos will
    pass the free plan's 1 GB, and free projects pause when idle). Downgrade
    after the photos are exported.
-2. **Database:** run `migrations/20261104000000_song_requests.sql` in the SQL
-   editor (or `supabase link` then `supabase db push`).
+2. **Database:** link the repo with Supabase's GitHub integration so pushes to
+   `main` apply `migrations/` (see `DEPLOY.md`). Without it: run each file in
+   `migrations/`, oldest first, in the SQL editor, or `supabase db push`.
 3. **DJ key:** in the SQL editor, with a long random string of your own:
    ```sql
    select app_private.set_admin_key('<long random string>');
@@ -41,7 +43,7 @@ phone, enforced by a unique index.
    sign-ins**. Then Authentication → Rate Limits: raise **anonymous sign-ins
    per hour** well above the default (try 1000). Every guest on venue wifi
    shares one IP address, and the default would lock most of them out.
-5. **Edge Function:**
+5. **Edge Function** (or let `.github/workflows/functions.yml` deploy it):
    ```bash
    supabase functions deploy songs
    supabase secrets set SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... SPOTIFY_MARKET=US
@@ -50,6 +52,10 @@ phone, enforced by a unique index.
    The Spotify app setup is in `wedding-song-requests/README.md`.
 6. **Site:** put the project URL and the **anon** key in `site/assets/config.js`
    and push. Both are public by design. Never put the service-role key there.
+7. **Guests:** `python3 scripts/import_passes.py <workbook.xlsx>`, then run
+   `private/passes.sql` in the SQL editor. Re-run both whenever the workbook
+   changes; tokens never change once issued (they're in `private/pass-tokens.csv`,
+   so back that file up).
 
 ## Before the day
 
@@ -60,12 +66,14 @@ phone, enforced by a unique index.
 ## Tests
 
 ```bash
-supabase/tests/run.sh
+tests/sql/run.sh
 ```
 
 It needs only the Postgres server binaries (`initdb`, `pg_ctl`), not Docker or
 the Supabase CLI. `stub_supabase.sql` fakes the bits of Supabase the migration
-uses (`auth.uid()`, the API roles). CI runs it on every change under `supabase/`.
+uses (`auth.uid()`, the API roles). CI runs it on every change under
+`supabase/` or `tests/sql/`. It lives outside `supabase/tests/` because the
+Supabase CLI reserves that folder for pgTAP tests.
 
 The Edge Function is not covered by these tests. Try it with `supabase start`
 and `supabase functions serve songs` before the first real deploy.

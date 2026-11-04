@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   var KT = window.KT;
+  // Timed release: before songs opens, the page shows its "opens at" notice
+  // (features.js) and reloads itself at the opening time.
+  if (KT.feature && KT.feature('songs') !== 'open') { KT.whenOpen('songs', function () {}); return; }
   var api = KT.songsClient();
 
   var $ = function (id) { return document.getElementById(id); };
