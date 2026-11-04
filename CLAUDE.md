@@ -189,6 +189,8 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   `qr_url` column for the print shop.
 - ✅ Guests loaded: 105 passes, 14 tables, tokens matching the print merge
   sent from the build session (`private/print-merge-with-qr.csv`).
+- Gates are **P01–P14** (one per table, as in the workbook), not the K/T +
+  table number the design system first assumed; the design system is updated.
 - Passes are **not sent ahead**: guests first get them with the paper pass at
   cocktail hour, so each pass is generated once, after seating is final (after
   Nov 9), with its real gate. No TBA version or replacement needed.
@@ -240,8 +242,8 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   defaults are the offline fallback.
 - ✅ Organizer screen `/admin/` with its own key: switches and Pacific times
   per feature, shots per pass, the reveal time and "Release photos now".
-- ☐ Set the organizer key (`app_private.set_organizer_key`, not set as of
-  Nov 4) and choose the night's schedule (likely: camera and
+- ✅ Organizer key set.
+- ☐ Choose the night's schedule in `/admin/` (likely: camera and
   Wallet at cocktail hour, songs open now and closed by the DJ, photos 24
   hours after).
 
@@ -270,8 +272,6 @@ URL column is ready for them); a "now playing" line from the DJ's Played tap.
 
 - Content for the Details `EDIT ME` cards (Zola wasn't reachable from the build
   session; `zola.com` would need to be on its network allowlist).
-- Gates: the workbook uses P01–P14, while the design system and the workbook's
-  own note say K or T + table number (K9). Which is printed?
 - 5 workbook rows carry a QC note ("family-name-first guess"): confirm their
   FIRST/LAST and STRIP NAME before printing.
 - Do the Apple and Google accounts exist yet, and under whose name?
