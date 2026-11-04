@@ -18,3 +18,14 @@ verify_jwt = true
 public = false
 file_size_limit = "8MiB"
 allowed_mime_types = ["image/jpeg"]
+
+# Opened as a plain link from Safari (no Authorization header): the pass
+# token in the URL is the credential, checked in the database.
+[functions.wallet]
+verify_jwt = false
+
+# Signed Apple Wallet passes, one per guest, made by scripts/make_wallet_passes.py.
+[storage.buckets.wallet]
+public = false
+file_size_limit = "2MiB"
+allowed_mime_types = ["application/vnd.apple.pkpass"]

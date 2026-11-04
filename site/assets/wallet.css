@@ -1,0 +1,6 @@
+/* Landing page: the on-screen boarding pass and the Wallet buttons. Tokens only. */
+
+.wal-area { justify-items: center; }
+.wal-area .kt-pass { margin: 0 auto; }
+.wal-stub { grid-template-columns: 1fr; }
+.wal-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }

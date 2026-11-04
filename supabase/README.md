@@ -9,6 +9,7 @@ config.toml   Edge Functions + the photos bucket (the GitHub integration deploys
 migrations/   schema + every rule, as Postgres functions (the only API)
 functions/    songs: Spotify search and song submission
               camera: signed upload URLs for reserved shots; gallery links after the reveal
+              wallet: serves a guest's signed Apple pass to its token (no login)
 
 tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 ```
@@ -23,6 +24,8 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | Search, request a song | Edge Function `songs` | anyone / signed-in guest |
 | Camera status, confirm a shot | `rpc('camera_status')`, `rpc('confirm_shot')` | a guest (claimed pass for the camera) |
 | Reserve a shot + upload URL; gallery | Edge Function `camera` | a guest with a claimed pass |
+| Landing page pass card | `rpc('my_pass_card')` | a guest with a claimed pass |
+| Download the Apple Wallet pass | Edge Function `wallet` (`GET ?t=<token>`) | whoever holds the token, while `wallet` is open |
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
 
@@ -50,7 +53,7 @@ the window they are refused with `feature_soon` or `feature_closed`.
    select app_private.set_admin_key('<DJ key>');
    select app_private.set_organizer_key('<organizer key>');
    ```
-   DJ view: `https://wedding.peitzman.net/songs/dj/#key=<DJ key>`.
+   DJ view: `https://wedding.peitzman.net/songs/dj/#key=<DJ key>` (or `/dj/#key=…`).
    Organizer screen: `https://wedding.peitzman.net/admin/#key=<organizer key>`.
    The organizer key also opens the DJ view; the DJ key can't open the admin
    screen, change the camera or release the photos.
@@ -60,7 +63,7 @@ the window they are refused with `feature_soon` or `feature_closed`.
    Every guest on venue wifi shares one IP address.
 5. **Spotify:** `supabase secrets set SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... SPOTIFY_MARKET=US`.
    Without them the `songs` function searches a small demo catalog. The
-   Spotify app setup is in `wedding-song-requests/README.md`.
+   Spotify app setup is in `docs/songs.md`.
 6. **Site:** the project URL and the **anon** key go in `site/assets/config.js`.
    Both are public by design. Never put the service-role or a secret key there.
 7. **Guests:** `python3 scripts/import_passes.py <workbook.xlsx>` writes
@@ -86,6 +89,16 @@ update public.feature_schedule set is_on = false where feature = 'camera';
 update public.feature_schedule set opens_at = '2026-11-21 17:45-08' where feature = 'camera';
 update public.events set photos_reveal_at = now();          -- release the photos
 ```
+
+## Wallet passes
+
+- Signed `.pkpass` files sit in the private `wallet` bucket as
+  `<zola_guest_id>.pkpass`, made and uploaded by `scripts/make_wallet_passes.py`
+  (steps in `docs/wallet.md`). Until a guest's file is there, their landing
+  page just shows the on-screen pass.
+- The `wallet` function has `verify_jwt = false` in `config.toml`: Safari opens
+  it as a plain link, and the 16-character pass token is the credential.
+- Google save links go in `passes.google_save_url` (generator not built yet).
 
 ## The camera
 

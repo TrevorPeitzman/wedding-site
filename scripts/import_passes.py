@@ -13,6 +13,8 @@ Reads the PASSENGERS and PRINT MERGE tabs and writes three files to private/
                              Paste into the Supabase SQL editor, or run with psql.
   print-merge-with-qr.csv    the PRINT MERGE tab plus a qr_url column, for the
                              print shop: the QR on the stub ("ADD TO WALLET").
+  passes.json                the same guests as passes.sql, for
+                             scripts/make_wallet_passes.py.
 
 Only guests with RSVP = Yes are included. A guest without a Zola guest ID is
 an error, because the token is keyed on it.
@@ -20,6 +22,7 @@ an error, because the token is keyed on it.
 Needs: pip install openpyxl
 """
 import csv
+import json
 import secrets
 import sys
 from pathlib import Path
@@ -115,6 +118,9 @@ def main(path):
         updates = ", ".join(f"{c} = excluded.{c}" for c in cols if c not in ("token", "zola_guest_id"))
         f.write(f"\non conflict (token) do update set {updates}, updated_at = now();\n")
 
+    with (OUT / "passes.json").open("w") as f:
+        json.dump(records, f, indent=1, ensure_ascii=False)
+
     by_bcbp = {rec["bcbp"]: rec["token"] for rec in records}
     merge = list(rows(wb["PRINT MERGE"]))
     missing = 0
@@ -134,7 +140,7 @@ def main(path):
         problems.append(f"{missing} PRINT MERGE rows had no attending guest with the same BCBP string (left out)")
 
     print(f"{len(records)} attending guests -> {OUT}/")
-    print("  pass-tokens.csv, passes.sql, print-merge-with-qr.csv")
+    print("  pass-tokens.csv, passes.sql, passes.json, print-merge-with-qr.csv")
     for p in problems:
         print("  check:", p)
 

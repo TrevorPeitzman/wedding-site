@@ -29,9 +29,8 @@ Deploying: `DEPLOY.md`. Backend: `supabase/README.md`.
   the Edge Functions and the `photos` bucket deploy through Supabase's GitHub
   integration on every push to `main` (working directory `.`).
   `.github/workflows/functions.yml` is a fallback for functions.
-- No servers of our own. `wedding-song-requests/` (FastAPI) is the original
-  prototype, superseded now that the Supabase version is live; delete it once
-  nobody needs it as a reference.
+- No servers of our own. The original FastAPI prototype was deleted on Nov 4
+  (it's in git history); what's still useful from it is in `docs/songs.md`.
 
 ## Repo layout
 
@@ -39,10 +38,12 @@ Deploying: `DEPLOY.md`. Backend: `supabase/README.md`.
 site/                       static pages (no build step)
   index.html, schedule/, details/
   songs/                    guest song board; songs/dj/ is the DJ view
+  dj/                       shortcut: /dj/#key=… → /songs/dj/#key=…
   camera/                   disposable camera (pass required, no peeking)
   photos/                   the reveal: everyone's photos, guests with a pass
   p/                        QR landing page (/p/?pass=<token>), never switched off
   admin/                    organizer screen: feature switches + times, camera, reveal
+  404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
   assets/theme.js           sync <head>: Terrace/Finery, KT.now() rehearsal clock
@@ -54,15 +55,21 @@ site/                       static pages (no build step)
   assets/camera.js          capture, resize, IndexedDB queue, retries
   assets/photos.js          the gallery
   assets/admin.js           the organizer screen
+  assets/wallet.js          /p/: on-screen boarding pass + device-aware Wallet button
 supabase/
   config.toml               functions + the photos bucket (deployed by the integration)
   migrations/               schema + rules (the API is these functions)
   functions/songs/          Spotify search + submit (Deno)
   functions/camera/         reserve -> signed upload URL; gallery signed URLs
-scripts/import_passes.py    guest workbook -> tokens, passes.sql, print merge + QR URLs
+  functions/wallet/         GET ?t=<token> -> the guest's .pkpass (verify_jwt off)
+scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
+scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
+scripts/requirements.txt    cryptography, Pillow, openpyxl
+tests/test_wallet_passes.py signs test passes with a throwaway certificate, verifies with openssl
 tests/sql/run.sh            migrations + SQL tests on a throwaway local Postgres
+docs/songs.md               song rules, Spotify app setup, DJ questions, decisions
+docs/wallet.md              Apple Developer + Google Wallet account setup (Phase 4)
 private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
-wedding-song-requests/      original FastAPI prototype (superseded)
 ```
 
 ## Working on it
@@ -89,6 +96,7 @@ wedding-song-requests/      original FastAPI prototype (superseded)
   To add a schedule check to an existing function, wrap it as the
   timed-release migration does (move the old one to `app_private`).
 - Edge Functions: `npx -y deno@2.1.4 check supabase/functions/*/index.ts`.
+- Wallet generator: `python3 tests/test_wallet_passes.py` (CI runs it too).
 - Guest-facing DB errors: `app_private.fail(code, message, retry_after)`; the
   client shows `message` and switches on `code`.
 - Pages must work without JavaScript except the song board, camera and admin.
@@ -163,33 +171,43 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   set; anonymous sign-ins on, 300/hour; `config.js` filled (legacy anon JWT key
   on purpose; see the comment there).
 - ✅ Pages live at wedding.peitzman.net (TLS provisioning on Nov 4).
-- ☐ DJ walkthrough (see wedding-song-requests/DESIGN.md "Things to ask him").
+- ☐ DJ walkthrough (questions in `docs/songs.md`).
 
 ### 3. Details live (by Nov 10)
 - Fill the `EDIT ME` cards on the Details page from Zola and un-hide them.
 - Print a test QR code.
 
-### 4. Wallet passes (Nov 5–16)
-- **Start the accounts, both have lead time.** Apple Developer Program
-  ($99/year) for the Pass Type ID + signing certificate; Google Wallet issuer
-  account, then request publishing access (new accounts are demo-only).
+### 4. Wallet passes (Nov 5–16) — built, waiting on the accounts
+- **Start the accounts, both have lead time:** step by step in `docs/wallet.md`.
+  Apple Developer Program ($99/year) for the Pass Type ID + signing
+  certificate; Google Wallet issuer account, then request publishing access
+  (new accounts are demo-only).
 - ✅ Guest import: `scripts/import_passes.py` reads the KT 1121 merge workbook
   (105 attending guests) → tokens, `passes.sql`, and the print merge CSV with a
   `qr_url` column for the print shop.
-- ☐ Load the guests: paste the **contents** of `private/passes.sql` into the
-  SQL editor (not its file name).
+- ✅ Guests loaded: 105 passes, 14 tables, tokens matching the print merge
+  sent from the build session (`private/print-merge-with-qr.csv`).
 - Passes are **not sent ahead**: guests first get them with the paper pass at
   cocktail hour, so each pass is generated once, after seating is final (after
   Nov 9), with its real gate. No TBA version or replacement needed.
-- Generator: one signed `.pkpass` per guest (standard boarding-pass style, no
-  iOS 26 live flight fields; PDF417 with the same BCBP string as the paper;
-  back field links to the camera) and one Google Wallet boarding-pass object +
-  save link per guest.
-- Storage: `.pkpass` files in a private Supabase bucket; an Edge Function
-  serves `GET /pass?t=<token>` with `Content-Type: application/vnd.apple.pkpass`.
-- Landing page `site/p/`: iPhone → straight to the .pkpass; Android → Save to
-  Google Wallet button; other → both + the on-screen pass. It also claims the
-  pass for the camera and song board. The `wallet` feature switch gates it.
+- ✅ Apple generator `scripts/make_wallet_passes.py`: one signed `.pkpass` per
+  guest (boarding-pass style, no iOS 26 live flight fields; PDF417 with the
+  same BCBP string as the paper; design-system colors; crest icon and logo;
+  back field links to the guest's `/p/`). Checks the certificate matches the
+  Pass Type ID and Team ID; `--only` for a one-pass test; `--upload`. Tested
+  with a throwaway chain (signature verified by openssl), not yet with Apple's.
+- ✅ Serving: private `wallet` bucket (`<zola_guest_id>.pkpass`); the `wallet`
+  Edge Function serves `GET /functions/v1/wallet?t=<token>` as
+  `application/vnd.apple.pkpass`, only while the `wallet` feature is open.
+- ✅ Landing page `/p/`: the guest's boarding pass on screen (design-system
+  BoardingPass), greeting by first name; iPhone → Add to Apple Wallet, Android
+  → Save to Google Wallet, desktop → both, each only when ready; Wallet takes
+  the primary button. `my_pass_card()` feeds it.
+- ☐ Apple: certificate → test pass on your phone → everyone's, after Nov 9
+  (`docs/wallet.md`, "Making the Apple passes").
+- ☐ Google: verify the docs (`developers.google.com` blocked here), then a
+  generator that fills `passes.google_save_url`.
+- ☐ Official "Add to Apple Wallet" / "Add to Google Wallet" badge artwork.
 - Paper pass: the stub's decorative PDF417 becomes a QR labelled ADD TO WALLET.
 
 ### 5. Camera ✅ live (Nov 4)
@@ -220,7 +238,8 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   defaults are the offline fallback.
 - ✅ Organizer screen `/admin/` with its own key: switches and Pacific times
   per feature, shots per pass, the reveal time and "Release photos now".
-- ☐ Set the organizer key and choose the night's schedule (likely: camera and
+- ☐ Set the organizer key (`app_private.set_organizer_key`, not set as of
+  Nov 4) and choose the night's schedule (likely: camera and
   Wallet at cocktail hour, songs open now and closed by the DJ, photos 24
   hours after).
 
@@ -245,6 +264,8 @@ URL column is ready for them); a "now playing" line from the DJ's Played tap.
   own note say K or T + table number (K9). Which is printed?
 - 5 workbook rows carry a QC note ("family-name-first guess"): confirm their
   FIRST/LAST and STRIP NAME before printing.
-- Which token set is final: the one the import script made locally, or the
-  one sent from the build session? Only one may be printed and loaded.
 - Do the Apple and Google accounts exist yet, and under whose name?
+- Google Wallet: does a boarding pass accept a made-up carrier ("KT 1121"), or
+  does it need a Generic pass styled as one? (`docs/wallet.md`)
+- Destinations in script on the pass: Adora Bouton's capital S ("Santorini")
+  reads a little like an F. Keep, or set the destination in Baskerville?
