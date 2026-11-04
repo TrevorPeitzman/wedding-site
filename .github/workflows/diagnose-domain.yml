@@ -1,0 +1,28 @@
+# Temporary: DNS and certificate check for wedding.peitzman.net from a
+# GitHub runner (the build session can't resolve DNS). Delete after use.
+name: Diagnose domain
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['.github/workflows/diagnose-domain.yml']
+jobs:
+  dns:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DNS
+        run: |
+          for t in A AAAA CNAME; do echo "== wedding.peitzman.net $t"; dig +short wedding.peitzman.net $t; done
+          echo "== wedding.peitzman.net full answer"; dig wedding.peitzman.net +noall +answer
+          echo "== peitzman.net NS"; dig +short peitzman.net NS
+          echo "== peitzman.net A"; dig +short peitzman.net A
+          echo "== CAA (peitzman.net, wedding.peitzman.net)"; dig +short peitzman.net CAA; dig +short wedding.peitzman.net CAA
+          echo "== GitHub domain verification TXT"; dig +short _github-pages-challenge-TrevorPeitzman.peitzman.net TXT; dig +short _github-pages-challenge-trevorpeitzman.peitzman.net TXT
+          echo "== trevorpeitzman.github.io A"; dig +short trevorpeitzman.github.io A
+          echo "== answers from 1.1.1.1 and 8.8.8.8"; dig +short @1.1.1.1 wedding.peitzman.net; dig +short @8.8.8.8 wedding.peitzman.net
+      - name: HTTP and HTTPS
+        run: |
+          echo "== http"; curl -sS -o /dev/null -D - --max-time 15 http://wedding.peitzman.net/ | head -15 || true
+          echo "== https"; curl -sS -o /dev/null -D - --max-time 15 https://wedding.peitzman.net/ 2>&1 | head -15 || true
+          echo "== certificate served for wedding.peitzman.net"
+          echo | openssl s_client -connect wedding.peitzman.net:443 -servername wedding.peitzman.net 2>/dev/null \
+            | openssl x509 -noout -subject -issuer -dates -ext subjectAltName 2>&1 || true
