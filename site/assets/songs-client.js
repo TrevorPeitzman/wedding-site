@@ -134,7 +134,10 @@
           return fn({ action: 'admin_photos', key: key, include_tests: !!includeTests }, 'camera')
             .then(function (r) { return r.photos; });
         },
-        hidePhoto: function (key, id, hidden) { return rpc('admin_hide_photo', { p_key: key, p_photo_id: id, p_hidden: !!hidden }); }
+        hidePhoto: function (key, id, hidden) { return rpc('admin_hide_photo', { p_key: key, p_photo_id: id, p_hidden: !!hidden }); },
+        // Shot counters per pass; a reset keeps the photos already taken.
+        shots: function (key) { return rpc('admin_shots', { p_key: key }); },
+        resetShots: function (key, token) { return rpc('admin_reset_shots', { p_key: key, p_token: token || null }); }
       },
       // Disposable camera. Every call needs a guest session: the pass the
       // phone claimed is the camera's identity.
@@ -226,6 +229,26 @@
     var hidden = demoPhotoHidden();
     return demoPhotoCache.filter(function (p) { return includeTests || !p.is_test; })
       .map(function (p) { return Object.assign({}, p, { hidden: !!hidden[p.id] }); });
+  }
+  // Demo shot counters: the sample guests, plus this browser's demo camera
+  // as Dora Day. A reset is remembered per token.
+  function demoResets() {
+    try { return JSON.parse(localStorage.getItem('kt-shots-demo-reset')) || {}; } catch (e) { return {}; }
+  }
+  function demoUsed() {
+    var at = demoResets().demo;
+    return cam().shots.filter(function (x) { return !at || (x.at || 0) > Date.parse(at); }).length;
+  }
+  function demoShots() {
+    var resets = demoResets();
+    var list = [{ token: 'demo', first_name: 'Dora', last_name: 'Day', table_number: 5, is_test: false,
+                  used: demoUsed(), uploaded: cam().shots.filter(function (x) { return x.status === 'uploaded'; }).length, phones: 1 }];
+    DEMO_GUESTS.slice(1).forEach(function (g, i) {
+      var tok = 'demo-guest-' + i, used = resets[tok] ? 0 : (i * 5 + 3) % 13;
+      list.push({ token: tok, first_name: g[0], last_name: g[1], table_number: g[2], is_test: false,
+                  used: used, uploaded: (i * 5 + 3) % 13, phones: used ? 1 : 0 });
+    });
+    return { shots_per_pass: 12, passes: list };
   }
   function demoFeatures() {
     var f = null;
@@ -488,6 +511,16 @@
             try { localStorage.setItem('kt-photos-demo-hidden', JSON.stringify(h)); } catch (e) {}
             return { id: id, hidden: !!hidden };
           });
+        },
+        shots: function (key) { return admin(key, function () { return demoShots(); }); },
+        resetShots: function (key, token) {
+          return admin(key, function () {
+            var r = demoResets(), list = demoShots().passes, now = new Date().toISOString();
+            if (token && !list.some(function (x) { return x.token === token; })) return null;
+            list.forEach(function (x) { if (!token || x.token === token) r[x.token] = now; });
+            try { localStorage.setItem('kt-shots-demo-reset', JSON.stringify(r)); } catch (e) {}
+            return { reset: token ? 1 : list.length };
+          });
         }
       },
       // Demo camera: the same rules, kept in localStorage. Uploads "fail"
@@ -497,7 +530,7 @@
           var pass = storedPass();
           if (pass) { var s0 = load(); s0.me = { name: 'Guest with pass', from_pass: true }; save(s0); forgetPass(); }
           var s = load(), c = cam();
-          var used = c.shots.length;
+          var used = demoUsed();
           var reveal = c.reveal_at || DEMO_REVEAL;
           var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(reveal);
           return later({ open: true, has_pass: !!s.me.from_pass, first_name: s.me.from_pass ? 'Guest' : null,
@@ -511,12 +544,12 @@
           if (!s.me.from_pass) return fail('no_pass', 'Scan the QR on your boarding pass to use the camera.');
           var shot = c.shots.filter(function (x) { return x.client_id === clientId; })[0];
           if (!shot) {
-            if (c.shots.length >= 12) return fail('out_of_shots', 'That’s all 12 shots on this pass. Thank you!');
-            shot = { client_id: clientId, photo_id: 'demo-' + clientId, status: 'reserved' };
+            if (demoUsed() >= 12) return fail('out_of_shots', 'That’s all 12 shots on this pass. Thank you!');
+            shot = { client_id: clientId, photo_id: 'demo-' + clientId, status: 'reserved', at: Date.now() };
             c.shots.push(shot); saveCam(c);
           }
           return later({ ok: true, photo_id: shot.photo_id, path: shot.photo_id + '.jpg', status: shot.status,
-                         left: 12 - c.shots.length,
+                         left: Math.max(0, 12 - demoUsed()),
                          upload: shot.status === 'uploaded' ? null : { path: shot.photo_id + '.jpg', token: 'demo' } });
         },
         upload: function () {
@@ -580,7 +613,8 @@
       request: down, vote: down,
       admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
                features: down, setFeature: down, setCamera: down, rehearsal: down, makeTestPasses: down,
-               resetTestPass: down, deleteTestPasses: down, clearSongs: down, photos: down, hidePhoto: down },
+               resetTestPass: down, deleteTestPasses: down, clearSongs: down, photos: down, hidePhoto: down,
+               shots: down, resetShots: down },
       camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down },
       wallet: { card: down, appleUrl: function () { return '#'; } } });
   };

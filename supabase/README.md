@@ -31,6 +31,7 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
 | Organizer photos: list, hide | `camera` function `admin_photos`, `rpc('admin_hide_photo')` | organizer key |
+| Shots by guest, reset a counter | `rpc('admin_shots' / 'admin_reset_shots')` | organizer key |
 | Rehearsal tools | `rpc('admin_rehearsal' / 'admin_make_test_passes' / 'admin_clear_songs')`, `camera` function `purge` | organizer key |
 
 Tables are never exposed: RLS is on with no policies, and the API roles have
@@ -127,6 +128,9 @@ update public.events set photos_reveal_at = now();          -- release the photo
   dashboard, or with the CLI (check `supabase storage cp --help` first; it's
   experimental): `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
 - Guests save from `/photos/` after the reveal: Select some or Save all.
+- Give a guest their shots back: `/admin/` → Camera → Shots by guest →
+  **Reset shots** (or **Reset everyone's shots**). Their photos stay; shots
+  taken before the reset just stop counting (`passes.shots_reset_at`).
 
 ## Rehearsal
 
@@ -150,6 +154,10 @@ update public.events set photos_reveal_at = now();          -- release the photo
 tests/sql/run.sh
 npx -y deno@2.1.4 check supabase/functions/*/index.ts
 ```
+
+Supabase runs pg-safeupdate for API calls: a `DELETE` or `UPDATE` without a
+`WHERE` fails there ("DELETE requires a WHERE clause") but works locally. A
+test checks that no public function has one.
 
 The SQL tests need only the Postgres server binaries (`initdb`, `pg_ctl`), not
 Docker or the Supabase CLI. `stub_supabase.sql` fakes the parts of Supabase

@@ -96,6 +96,9 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
   the top of `site.css`. `/p/`, `/photos/` and `/admin/` belong to no feature.
 - DB rules: a new file in `supabase/migrations/` per change (never edit one
   that has been applied); run `tests/sql/run.sh`; add a test for each rule.
+  Every `DELETE`/`UPDATE` in a public function needs a `WHERE` (Supabase's
+  pg-safeupdate refuses bare ones in API calls; local Postgres doesn't, so a
+  test checks the function bodies).
   To add a schedule check to an existing function, wrap it as the
   timed-release migration does (move the old one to `app_private`).
 - Edge Functions: `npx -y deno@2.1.4 check supabase/functions/*/index.ts`.
@@ -166,6 +169,11 @@ The roadmap drawing is in the Event Webapp Plan doc.
 ### 1. Foundations ✅ (Nov 4)
 Static Home, Schedule (timeline + room map), Details; day/night themes;
 rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
+- ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
+  items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
+  7:00, grand entrance 7:15 … last call 10:15, good night 11:00). The map is
+  the venue's floor plan, traced to SVG paths (theme colors, the current room
+  lit by `site.js`).
 
 ### 2. Song requests on Supabase ✅ live (Nov 4)
 - ✅ Rules in Postgres functions with SQL tests; Spotify Edge Function; guest
@@ -240,6 +248,9 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
   up to 10, so they land in the camera roll), or Save all (.zip files).
 - Organizer export: `/admin/` → Download all, or see supabase/README.md.
+- ✅ Shots by guest (`/admin/` → Camera): each pass's count; **Reset shots**
+  for one guest or everyone gives the full count back and keeps their photos
+  (`passes.shots_reset_at`; earlier shots stop counting).
 
 ### 6. Timed release ✅ built (Nov 4)
 - ✅ `public.feature_schedule` (on/off, opens_at, closes_at per feature),
