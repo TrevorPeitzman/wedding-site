@@ -76,11 +76,11 @@
       var s = new Date(items[i].getAttribute('data-start')).getTime();
       if (now >= s && now < end && items[i].getAttribute('data-room')) { room = items[i].getAttribute('data-room'); break; }
     }
-    document.querySelectorAll('.kt-map [data-room]').forEach(function (g) {
-      var on = !!room && g.getAttribute('data-room') === room;
-      var rect = g.querySelector('rect'), text = g.querySelector('text');
-      if (rect) rect.setAttribute('class', on ? 'r r-on' : 'r');
-      if (text) text.setAttribute('class', on ? 'lbl lbl-on' : 'lbl');
+    // The floor plan: each room's wash and label carry data-room.
+    document.querySelectorAll('.kt-map [data-room]').forEach(function (el) {
+      var on = !!room && el.getAttribute('data-room') === room;
+      if (el.classList) el.classList.toggle('is-on', on);
+      else el.setAttribute('class', (el.getAttribute('class') || '').replace(/\s*is-on/g, '') + (on ? ' is-on' : ''));
     });
     var svg = document.querySelector('.kt-map svg');
     var roomName = room && ROOM_NAMES[room];
