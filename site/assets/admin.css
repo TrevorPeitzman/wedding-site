@@ -19,3 +19,22 @@
 .adm-pass a { overflow-wrap: anywhere; font-size: 14px; }
 .adm-pass .adm-row { grid-column: 1 / -1; justify-content: flex-start; }
 .adm-danger .kt-btn { white-space: normal; text-align: left; }
+
+/* Photos: every shot with who took it. */
+.adm-photos {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(8em, 1fr)); gap: var(--space-4) var(--space-3);
+}
+.adm-photos .cam-empty { grid-column: 1 / -1; }
+.adm-photo { display: grid; gap: var(--space-2); align-content: start; min-width: 0; }
+.adm-thumb { display: block; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-sm); background: var(--surface-sunk); }
+.adm-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.adm-thumb:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.adm-photo.is-picked .adm-thumb { box-shadow: 0 0 0 3px var(--brand); }
+.adm-photo.is-hidden .adm-thumb img { opacity: .4; }
+.adm-cap { margin: 0; display: grid; gap: 2px; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.adm-cap .cam-shot-name { font-size: 14px; }
+.adm-cap .cam-state { font-size: 11px; }
+.adm-photo-act { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.adm-photo-act .kt-choice span { padding: var(--space-2) var(--space-3); font-size: 13px; }
+#photo-table { max-width: 16em; }

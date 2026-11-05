@@ -9,7 +9,8 @@ config.toml   Edge Functions + the photos bucket (the GitHub integration deploys
 migrations/   schema + every rule, as Postgres functions (the only API)
 functions/    songs: Spotify search and song submission
               camera: signed upload URLs for reserved shots; gallery links after the reveal;
-                      organizer-only "purge" of test passes' photo files (rehearsal)
+                      organizer-only photo list with links ("admin_photos") and
+                      "purge" of test passes' photo files (rehearsal)
               wallet: serves a guest's signed Apple pass to its token (no login)
 
 tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
@@ -29,6 +30,7 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | Download the Apple Wallet pass | Edge Function `wallet` (`GET ?t=<token>`) | whoever holds the token, while `wallet` is open |
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
+| Organizer photos: list, hide | `camera` function `admin_photos`, `rpc('admin_hide_photo')` | organizer key |
 | Rehearsal tools | `rpc('admin_rehearsal' / 'admin_make_test_passes' / 'admin_clear_songs')`, `camera` function `purge` | organizer key |
 
 Tables are never exposed: RLS is on with no policies, and the API roles have
@@ -82,6 +84,8 @@ the window they are refused with `feature_soon` or `feature_closed`.
   an opening time and a closing time, in Pacific time. Pages follow within a
   page load; the database enforces it at once.
 - Camera: shots per pass, when the photos come out, and **Release photos now**.
+- Photos: every shot with who took it; filter by table; hide one from the
+  gallery; download selected or all.
 - Live counts: photos uploaded and still uploading, passes shooting, passes
   scanned.
 
@@ -107,13 +111,18 @@ update public.events set photos_reveal_at = now();          -- release the photo
 - Photos land in the private `photos` bucket (JPEG only, 8 MB), one
   `<photo id>.jpg` per shot. `public.photos` records whose pass took each one
   and whether it uploaded.
-- Take one photo out of the gallery (it still counts as a shot):
+- `/admin/` → Photos shows every photo as it uploads, with the guest's name,
+  table and time, before the reveal too (signed links, 1 hour; **Refresh
+  photos** renews them). **Hide** takes one out of the guest gallery (it
+  still counts as a shot); **Show** puts it back. The same by SQL:
   ```sql
   update public.photos set status = 'removed' where id = '<photo id>';
   ```
-- Export everything after the night: Storage → `photos` in the dashboard, or
-  with the CLI (check `supabase storage cp --help` first; it's experimental):
-  `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
+- Export everything after the night: `/admin/` → Photos → **Download all**
+  (.zip files of 100, built in the browser), Storage → `photos` in the
+  dashboard, or with the CLI (check `supabase storage cp --help` first; it's
+  experimental): `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
+- Guests save from `/photos/` after the reveal: Select some or Save all.
 
 ## Rehearsal
 

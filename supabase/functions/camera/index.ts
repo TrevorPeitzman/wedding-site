@@ -13,6 +13,11 @@
 // POST { action: "purge", key, what: "test_pass" | "test_passes", token? }
 //   Organizer only (rehearsal): drops test shots and removes their files.
 //
+// POST { action: "admin_photos", key, include_tests? }  -> { ok, photos: [{ id, url, first_name, ... }] }
+//   Organizer only: every uploaded photo (hidden ones too) with who took it
+//   and a signed URL (1 hour), for the Photos section of /admin/. Works
+//   before the reveal.
+//
 // Refusals come back as 200 { ok: false, code, message } like `songs`.
 import { createClient } from "jsr:@supabase/supabase-js@2.45.4";
 
@@ -73,6 +78,32 @@ Deno.serve(async (req) => {
         if (rmError) throw rmError;
       }
       return json({ ok: true, removed: paths.length });
+    }
+
+    // The organizer's photo view: the database checks the key and lists the
+    // rows; this signs a link for each file.
+    if (body.action === "admin_photos") {
+      const anon = createClient(URL_, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: rows, error } = await anon.rpc("admin_photos", {
+        p_key: String(body.key ?? ""),
+        p_include_tests: body.include_tests === true,
+      });
+      if (error) return fromDb(error);
+      // deno-lint-ignore no-explicit-any
+      const list = rows as any[];
+      const urls = new Map<string, string>();
+      for (let i = 0; i < list.length; i += 500) {
+        const paths = list.slice(i, i + 500).map((r) => r.path);
+        const { data: signed, error: urlError } = await admin.storage.from("photos").createSignedUrls(paths, 3600);
+        if (urlError) throw urlError;
+        for (const u of signed) if (u.signedUrl && u.path) urls.set(u.path, u.signedUrl);
+      }
+      return json({
+        ok: true,
+        photos: list.filter((r) => urls.has(r.path)).map((r) => ({ ...r, url: urls.get(r.path) })),
+      });
     }
 
     const auth = req.headers.get("Authorization") ?? "";

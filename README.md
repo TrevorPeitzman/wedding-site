@@ -9,7 +9,7 @@ Guest web app for Katarina & Trevor's wedding, live at
 | `site/songs/`, `site/songs/dj/` | Song requests and the DJ view (shortcut: `/dj/`) |
 | `site/camera/`, `site/photos/` | The disposable camera and, after the reveal, everyone's photos |
 | `site/p/` | Where the QR on each boarding pass lands: the pass on screen and its Add to Wallet button |
-| `site/admin/` | Organizer screen: feature switches and times, camera, photo reveal |
+| `site/admin/` | Organizer screen: feature switches and times, camera, photo reveal, every photo (hide, download), rehearsal |
 | `supabase/` | The backend: database rules, Edge Functions, setup ([supabase/README.md](supabase/README.md)) |
 | `scripts/import_passes.py` | Guest workbook → pass tokens, `passes.sql`, `passes.json`, print merge with QR links (output stays in git-ignored `private/`) |
 | `scripts/make_wallet_passes.py` | One signed Apple Wallet pass per guest ([docs/wallet.md](docs/wallet.md)) |

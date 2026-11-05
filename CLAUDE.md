@@ -40,9 +40,9 @@ site/                       static pages (no build step)
   songs/                    guest song board; songs/dj/ is the DJ view
   dj/                       shortcut: /dj/#key=… → /songs/dj/#key=…
   camera/                   disposable camera (pass required, no peeking)
-  photos/                   the reveal: everyone's photos, guests with a pass
+  photos/                   the reveal: everyone's photos, guests with a pass; select + save
   p/                        QR landing page (/p/?pass=<token>), never switched off
-  admin/                    organizer screen: feature switches + times, camera, reveal, rehearsal
+  admin/                    organizer screen: feature switches + times, camera, reveal, photos, rehearsal
   404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
@@ -54,13 +54,14 @@ site/                       static pages (no build step)
   assets/songs.js, dj.js    the two song pages
   assets/camera.js          capture, resize, IndexedDB queue, retries
   assets/photos.js          the gallery
+  assets/photo-tools.js     save photos: share sheet on phones (up to 10), else .jpg / .zip (built here)
   assets/admin.js           the organizer screen
   assets/wallet.js          /p/: on-screen boarding pass + device-aware Wallet button
 supabase/
   config.toml               functions + the photos bucket (deployed by the integration)
   migrations/               schema + rules (the API is these functions)
   functions/songs/          Spotify search + submit (Deno)
-  functions/camera/         reserve -> signed upload URL; gallery signed URLs
+  functions/camera/         reserve -> signed upload URL; gallery signed URLs; organizer photo list
   functions/wallet/         GET ?t=<token> -> the guest's .pkpass (verify_jwt off)
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
 scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
@@ -231,7 +232,14 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   after the end), set or released from `/admin/`; `/photos/` shows everyone's
   photos to guests with a pass.
 - ☐ Real-phone test (iPhone + Android, dark room, bad signal).
-- Organizer export: see supabase/README.md.
+- ✅ Organizer photo view (`/admin/` → Photos): every shot as it uploads with
+  name, table and time, before the reveal too; filter by table, test photos
+  on request; **Hide** keeps one out of the gallery (still a shot);
+  download selected or all as .zip files of 100 (`admin_photos`,
+  `admin_hide_photo`, the `camera` function's `admin_photos`).
+- ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
+  up to 10, so they land in the camera roll), or Save all (.zip files).
+- Organizer export: `/admin/` → Download all, or see supabase/README.md.
 
 ### 6. Timed release ✅ built (Nov 4)
 - ✅ `public.feature_schedule` (on/off, opens_at, closes_at per feature),

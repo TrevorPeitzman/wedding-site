@@ -22,10 +22,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
   <script src="/assets/site.js" defer></script>
   <script src="/assets/songs-client.js" defer></script>
+  <script src="/assets/photo-tools.js" defer></script>
   <script src="/assets/admin.js" defer></script>
 </head>
 <!--
-  Organizer screen: feature switches and times, the camera, the photo reveal.
+  Organizer screen: feature switches and times, the camera, the photo reveal,
+  every photo with who took it (hide, download), rehearsal tools.
   Opens with /admin/#key=<organizer key> (set in the SQL editor with
   select app_private.set_organizer_key('...')). The key is kept in this
   browser, so later visits are just /admin/. Times are Pacific.
@@ -104,6 +106,38 @@
               <button class="kt-btn kt-btn-secondary" type="button" id="release">Release photos now</button>
             </div>
           </form>
+        </div>
+      </section>
+
+      <section class="kt-card" aria-labelledby="photos-title">
+        <p class="kt-card-eyebrow">Everyone’s shots</p>
+        <h2 class="kt-card-title" id="photos-title">Photos</h2>
+        <div class="kt-card-body stack">
+          <p>Every photo as it comes in, with who took it. You can see them before the reveal; guests can’t. Hiding one keeps it out of the guest gallery (it still counts as a shot).</p>
+          <div class="stack" id="photo-tools" hidden>
+            <div class="adm-times">
+              <div class="kt-field">
+                <label class="kt-label" for="photo-table">Table</label>
+                <select class="kt-input" id="photo-table"><option value="">All tables</option></select>
+              </div>
+            </div>
+            <div class="adm-row">
+              <label class="kt-choice"><input type="checkbox" id="photo-tests"><span>Test photos too</span></label>
+              <label class="kt-choice"><input type="checkbox" id="photo-hidden-only"><span>Hidden only</span></label>
+            </div>
+            <div class="adm-row">
+              <p class="kt-hint" id="photo-count" aria-live="polite"></p>
+              <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="photo-pick-all">Select all</button>
+            </div>
+          </div>
+          <ul class="adm-photos" id="photos" aria-label="Photos" hidden></ul>
+          <p class="center" id="photo-more-wrap" hidden><button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="photo-more">Show more</button></p>
+          <p class="kt-hint" id="photo-progress" aria-live="polite" hidden></p>
+        </div>
+        <div class="kt-card-actions">
+          <button class="kt-btn kt-btn-secondary" type="button" id="photos-load">Show photos</button>
+          <button class="kt-btn kt-btn-secondary" type="button" id="photo-save-picked" hidden disabled>Download selected</button>
+          <button class="kt-btn kt-btn-quiet" type="button" id="photo-save-all" hidden>Download all</button>
         </div>
       </section>
 

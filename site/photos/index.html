@@ -23,6 +23,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
   <script src="/assets/site.js" defer></script>
   <script src="/assets/songs-client.js" defer></script>
+  <script src="/assets/photo-tools.js" defer></script>
   <script src="/assets/photos.js" defer></script>
 </head>
 <body class="kt-root">
@@ -53,12 +54,27 @@
 
     <div class="stack">
       <p class="kt-hint center" id="loading">Developing…</p>
-      <div id="message" aria-live="polite"></div>
+      <div class="gal-msg" id="message" aria-live="polite"></div>
       <section class="kt-card" id="no-pass" hidden>
         <h2 class="kt-card-title">Scan your boarding pass</h2>
         <div class="kt-card-body"><p>The photos are for our guests. Scan the QR on your boarding pass, then come back to this page.</p></div>
       </section>
+      <div class="adm-row gal-tools" id="tools" hidden>
+        <p class="kt-hint" id="count" aria-live="polite"></p>
+        <div class="gal-tool-btns">
+          <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" id="select" aria-pressed="false">Select</button>
+          <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="save-all">Save all</button>
+        </div>
+      </div>
+      <div class="gal-msg" id="save-message" aria-live="polite"></div>
       <ul class="gal-grid" id="grid" aria-label="Everyone’s photos" hidden></ul>
+      <div class="gal-bar" id="bar" hidden>
+        <p class="kt-hint" id="bar-note" aria-live="polite">Tap photos to choose them.</p>
+        <div class="gal-tool-btns">
+          <button class="kt-btn kt-btn-primary kt-btn-sm" type="button" id="save-picked" disabled>Save</button>
+          <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="done">Cancel</button>
+        </div>
+      </div>
     </div>
   </main>
 

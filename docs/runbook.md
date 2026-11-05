@@ -88,7 +88,8 @@ Healthy: no errors, and `song_board` p95 well under a second. If you see
 ## On the night
 
 **Who watches what:** one person (not the couple) keeps `/admin/` open for
-camera counts; the DJ keeps the DJ view open.
+camera counts (Photos → **Show photos** to see them come in, with who took
+each one); the DJ keeps the DJ view open.
 
 | If… | Then… |
 | --- | --- |
@@ -97,6 +98,7 @@ camera counts; the DJ keeps the DJ view open.
 | A guest lost their paper pass | They can still use the song board without one; the camera needs a pass (look up their token in `private/print-merge-with-qr.csv`). |
 | Requests get rowdy | DJ view: hide a song, block an artist, or switch off "Guests can request". |
 | You want requests closed | DJ view switch, or `/admin/` → Song requests → Closes. |
+| A photo shouldn't be in the gallery | `/admin/` → Photos → **Hide** on it. It still counts as one of that pass's shots; **Show** puts it back. |
 | Something is wrong with a feature | `/admin/` → switch it off; pages drop it on their next load. |
 | Supabase is down | The schedule, details and landing pages still work (static). Songs and camera show an error; shots stay saved on phones and upload later. Check https://status.supabase.com. |
 
@@ -105,8 +107,12 @@ camera counts; the DJ keeps the DJ view open.
 ## After
 
 - [ ] Next day: DJ view → **Download .csv** and **Spotify URIs** (setlist).
-- [ ] Export every photo: Supabase → Storage → `photos`, or
-      `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
+- [ ] Export every photo: `/admin/` → Photos → **Download all** on a laptop
+      (.zip files of 100, named by table, guest and time; hidden ones
+      included, and a table filter narrows it). Or Supabase → Storage →
+      `photos`, or `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
 - [ ] Photos come out on schedule, or `/admin/` → **Release photos now**.
+      Guests save from `/photos/`: **Select** some (up to 10 go straight to
+      a phone's photos through the share sheet) or **Save all** (.zip files).
 - [ ] After the gallery has been up a while and everything is downloaded:
       downgrade Supabase from Pro.
