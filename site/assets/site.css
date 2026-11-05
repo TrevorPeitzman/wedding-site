@@ -141,3 +141,12 @@ p { margin: 0; }
 .kt-map .wc-room { fill: var(--brand); fill-opacity: .3; stroke: var(--brand); stroke-width: 3; }
 .kt-map .wc-lead { stroke: var(--brand); stroke-width: 2.5; fill: none; }
 .kt-map svg .wc-lbl { font-size: 26px; font-weight: 700; fill: var(--brand); }
+
+/* Home: Wi-Fi card. The QR keeps its own dark-on-light colors to scan. */
+.wifi-qr { border-top: 1px solid var(--rule); padding-top: var(--space-3); margin-top: var(--space-4); }
+.wifi-qr summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--link); }
+.wifi-qr[open] { display: grid; gap: var(--space-3); justify-items: center; }
+.wifi-qr[open] summary { justify-self: stretch; }
+.wifi-qr-code { width: min(220px, 70vw); height: auto; display: block; margin: 0 auto; border-radius: var(--radius-sm); }
+.wifi-qr-code .qr-ground { fill: var(--qr-ground); }
+.wifi-qr-code .qr-ink { stroke: var(--qr-ink); fill: none; }

@@ -103,3 +103,24 @@
     });
   }
 })();
+
+
+/* Home: Wi-Fi. A web page can't join a network for the guest, so "Join
+ * Wi-Fi" copies the password and says where to paste it. */
+(function () {
+  'use strict';
+  var btn = document.getElementById('wifi-join'), how = document.getElementById('wifi-how');
+  if (!btn || !how) return;
+  btn.hidden = false;
+  btn.addEventListener('click', function () {
+    var done = function () {
+      how.textContent = 'Password copied. Now open Settings, then Wi-Fi, choose Linden Club Guest and paste it.';
+      btn.textContent = 'Copied';
+    };
+    var fail = function () {
+      how.textContent = 'Open Settings, then Wi-Fi, choose Linden Club Guest and type the password: 24Welcome.';
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('24Welcome').then(done, fail);
+    else fail();
+  });
+})();
