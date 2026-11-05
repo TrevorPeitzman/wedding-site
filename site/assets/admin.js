@@ -119,6 +119,11 @@
 
   function load() {
     if (!key) { showKeyForm(); return Promise.resolve(); }
+    if (key.length < 16) {
+      key = null; try { localStorage.removeItem(STORE); } catch (e) {}
+      showKeyForm('Organizer keys are at least 16 characters. Set a longer one in the SQL editor, then use it here.');
+      return Promise.resolve();
+    }
     return api.admin.features(key).then(function (d) {
       data = d; $('key-form').hidden = true; $('admin').hidden = false; render(); loadRehearsal();
       $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });

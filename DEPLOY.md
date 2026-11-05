@@ -39,7 +39,7 @@ timestamped files in `supabase/migrations/`.
    Never edit one that has already been applied: it won't run again.
 
 Still manual, because they're secrets or private data: the DJ and organizer
-keys (`app_private.set_admin_key(...)`, `app_private.set_organizer_key(...)`),
+keys (16+ characters; `app_private.set_admin_key(...)`, `app_private.set_organizer_key(...)`),
 the Spotify secrets, and loading guests (`scripts/import_passes.py`, then paste
 the contents of `private/passes.sql` into the SQL editor).
 

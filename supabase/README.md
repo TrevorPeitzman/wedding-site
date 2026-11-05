@@ -52,11 +52,15 @@ the window they are refused with `feature_soon` or `feature_closed`.
    to `main` applies new `migrations/`, deploys the functions and creates the
    `photos` bucket (see `DEPLOY.md`: the working directory is `.`). Check
    Database → Migrations before the next step.
-3. **Keys**, in the SQL editor, each a long random string of your own:
+3. **Keys**, in the SQL editor, each a long random string of your own, **at
+   least 16 characters** (shorter ones are refused). To make one:
+   `select encode(extensions.gen_random_bytes(18), 'base64');`
    ```sql
    select app_private.set_admin_key('<DJ key>');
    select app_private.set_organizer_key('<organizer key>');
    ```
+   Setting a key again replaces the old one: links with the old key stop
+   working, and a browser that saved it asks for the new one.
    DJ view: `https://wedding.peitzman.net/songs/dj/#key=<DJ key>` (or `/dj/#key=…`).
    Organizer screen: `https://wedding.peitzman.net/admin/#key=<organizer key>`.
    The organizer key also opens the DJ view; the DJ key can't open the admin
