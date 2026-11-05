@@ -144,7 +144,14 @@ p { margin: 0; }
 
 /* Home: Wi-Fi card. The QR keeps its own dark-on-light colors to scan. */
 .wifi-qr { border-top: 1px solid var(--rule); padding-top: var(--space-3); margin-top: var(--space-4); }
-.wifi-qr summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--link); }
+.wifi-qr summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); list-style: none; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--link); }
+.wifi-qr summary::-webkit-details-marker { display: none; }
+.wifi-qr summary::after {
+  content: ""; flex: none; width: 9px; height: 9px; margin: 0 var(--space-2) 5px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg);
+  transition: transform .2s ease;
+}
+.wifi-qr[open] summary::after { transform: rotate(-135deg); margin-bottom: -5px; }
 .wifi-qr[open] { display: grid; gap: var(--space-3); justify-items: center; }
 .wifi-qr[open] summary { justify-self: stretch; }
 .wifi-qr-code { width: min(220px, 70vw); height: auto; display: block; margin: 0 auto; border-radius: var(--radius-sm); }
