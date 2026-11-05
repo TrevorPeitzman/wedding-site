@@ -18,6 +18,13 @@
 //   and a signed URL (1 hour), for the Photos section of /admin/. Works
 //   before the reveal.
 //
+// Photo album (organizer key; files in the private `album` bucket):
+// POST { action: "album_reserve", key, name, ext, credit? } -> { ok, id, full: { path, token }, web: { path, token } }
+//   then the browser uploads both and calls rpc admin_album_confirm.
+// POST { action: "album_list", key }        -> { ok, photos: [{ id, ..., web_url, full_url }] }
+// POST { action: "album_delete", key, id }  -> { ok } (row and both files)
+// The gallery action also returns `album` once the photos are out.
+//
 // Refusals come back as 200 { ok: false, code, message } like `songs`.
 import { createClient } from "jsr:@supabase/supabase-js@2.45.4";
 
@@ -41,6 +48,20 @@ function refuse(code: string, message: string) {
 function fromDb(error: any) {
   if (error?.code === "P0001") return refuse(error.details ?? "refused", error.message);
   throw error;
+}
+
+// Signed links (1 hour) for album rows: the 2048px copy and the original.
+// deno-lint-ignore no-explicit-any
+async function signAlbum(rows: any[]) {
+  const urls = new Map<string, string>();
+  const paths = rows.flatMap((r) => [r.web_path, r.full_path]);
+  for (let i = 0; i < paths.length; i += 500) {
+    const { data, error } = await admin.storage.from("album").createSignedUrls(paths.slice(i, i + 500), 3600);
+    if (error) throw error;
+    for (const u of data) if (u.signedUrl && u.path) urls.set(u.path, u.signedUrl);
+  }
+  return rows.filter((r) => urls.has(r.web_path) && urls.has(r.full_path))
+    .map((r) => ({ ...r, web_url: urls.get(r.web_path), full_url: urls.get(r.full_path) }));
 }
 
 Deno.serve(async (req) => {
@@ -106,6 +127,37 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (body.action === "album_reserve" || body.action === "album_list" || body.action === "album_delete") {
+      const anon = createClient(URL_, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const key = String(body.key ?? "");
+      if (body.action === "album_reserve") {
+        const { data: a, error } = await anon.rpc("admin_album_reserve", {
+          p_key: key, p_name: String(body.name ?? ""), p_ext: String(body.ext ?? ""),
+          p_credit: body.credit ? String(body.credit) : null,
+        });
+        if (error) return fromDb(error);
+        const bucket = admin.storage.from("album");
+        const full = await bucket.createSignedUploadUrl(a.full_path, { upsert: true });
+        const web = await bucket.createSignedUploadUrl(a.web_path, { upsert: true });
+        if (full.error) throw full.error;
+        if (web.error) throw web.error;
+        return json({ ok: true, ...a, full: { path: full.data.path, token: full.data.token },
+                      web: { path: web.data.path, token: web.data.token } });
+      }
+      if (body.action === "album_delete") {
+        const { data: paths, error } = await anon.rpc("admin_album_delete", { p_key: key, p_id: String(body.id ?? "") });
+        if (error) return fromDb(error);
+        const { error: rmError } = await admin.storage.from("album").remove(paths);
+        if (rmError) throw rmError;
+        return json({ ok: true });
+      }
+      const { data: rows, error } = await anon.rpc("admin_album", { p_key: key });
+      if (error) return fromDb(error);
+      return json({ ok: true, photos: await signAlbum(rows) });
+    }
+
     const auth = req.headers.get("Authorization") ?? "";
     const { data: who } = await admin.auth.getUser(auth.replace(/^Bearer\s+/i, ""));
     if (!who?.user) return refuse("no_session", "Reload the page and try again.");
@@ -131,10 +183,15 @@ Deno.serve(async (req) => {
     if (body.action === "gallery") {
       const { data: paths, error } = await admin.rpc("gallery_paths_as", { p_guest: who.user.id });
       if (error) return fromDb(error);
-      if (!paths.length) return json({ ok: true, photos: [] });
+      // gallery_paths_as checked the pass and the reveal; the album follows.
+      const { data: albumRows, error: albumError } = await admin.rpc("album_paths");
+      if (albumError) throw albumError;
+      const album = await signAlbum(albumRows);
+      if (!paths.length) return json({ ok: true, photos: [], album });
       const { data: urls, error: urlError } = await admin.storage.from("photos").createSignedUrls(paths, 3600);
       if (urlError) throw urlError;
-      return json({ ok: true, photos: urls.filter((u) => u.signedUrl).map((u) => ({ path: u.path, url: u.signedUrl })) });
+      return json({ ok: true, album,
+                    photos: urls.filter((u) => u.signedUrl).map((u) => ({ path: u.path, url: u.signedUrl })) });
     }
 
     return refuse("bad_request", "Unknown action.");

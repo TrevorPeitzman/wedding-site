@@ -5,8 +5,11 @@
  *   - a phone that can share files, 10 or fewer: the share sheet ("Save
  *     Images" puts them in the camera roll);
  *   - one photo elsewhere: a plain .jpg download;
- *   - more: .zip downloads of up to 100 photos each (stored, not
+ *   - more: .zip downloads of up to 100 photos or 200 MB each (stored, not
  *     compressed: JPEGs don't shrink), built here so nothing else is needed.
+ *
+ * KT.photoTools.webCopy(file) -> Promise<Blob>: a 2048px JPEG of an image
+ * file (for the album's grid; the original is kept as is).
  * opts: { zipName, onProgress(done, total, label), ask(label) -> Promise }
  * `ask` shows a button and resolves when it's tapped: the share sheet needs
  * a fresh tap if fetching took too long.
@@ -14,7 +17,7 @@
 (function () {
   'use strict';
   var KT = window.KT = window.KT || {};
-  var PART = 100, SHARE_MAX = 10, PARALLEL = 4;
+  var PART = 100, PART_BYTES = 200 * 1024 * 1024, BATCH = 12, SHARE_MAX = 10, PARALLEL = 4;
 
   /* ---------------------------------------------------------------- zip -- */
   var CRC = (function () {
@@ -149,28 +152,34 @@
       return fetchAll(items).then(function (got) { return asDownloads(got, zipName, progress); });
     }
 
-    // Many: .zip files of PART photos each, one after another, so a phone
-    // never holds more than one part in memory.
-    var parts = Math.ceil(items.length / PART), saved = 0, failed = 0, chain = Promise.resolve();
-    for (var p = 0; p < parts; p++) {
-      (function (p) {
-        chain = chain.then(function () {
-          var slice = items.slice(p * PART, (p + 1) * PART);
-          var label = parts > 1 ? 'Part ' + (p + 1) + ' of ' + parts + ':' : 'Getting';
-          return fetchAll(slice, function (d, t) { progress(p * PART + d, items.length, label); }).then(function (got) {
-            failed += got.failed;
-            return Promise.all(got.files.map(function (f) {
-              return bytesOf(f.blob).then(function (b) { return { name: f.name, bytes: b, date: f.date }; });
-            }));
-          }).then(function (entries) {
-            if (!entries.length) return;
-            saved += entries.length;
-            download(zip(entries), zipName + (parts > 1 ? '-part' + (p + 1) : '') + '.zip');
-          });
-        });
-      })(p);
+    // Many: .zip files of up to PART photos or PART_BYTES each, fetched a
+    // batch at a time, so a phone never holds more than about one part.
+    var saved = 0, failed = 0, done = 0, partNo = 0, part = [], partBytes = 0;
+    function flush(last) {
+      if (!part.length) return;
+      partNo++;
+      var named = last && partNo === 1 ? zipName : zipName + '-part' + partNo;
+      download(zip(part), named + '.zip');
+      saved += part.length; part = []; partBytes = 0;
     }
-    return chain.then(function () { return { saved: saved, failed: failed, how: 'zip' }; });
+    var chain = Promise.resolve();
+    for (var i = 0; i < items.length; i += BATCH) {
+      (function (slice) {
+        chain = chain.then(function () {
+          return fetchAll(slice, function (d) { progress(done + d, items.length, partNo ? 'Part ' + (partNo + 1) + ':' : 'Getting'); })
+            .then(function (got) {
+              done += slice.length; failed += got.failed;
+              return got.files.reduce(function (p, f) {
+                return p.then(function () { return bytesOf(f.blob); }).then(function (bytes) {
+                  if (part.length && (part.length >= PART || partBytes + bytes.length > PART_BYTES)) flush(false);
+                  part.push({ name: f.name, bytes: bytes, date: f.date }); partBytes += bytes.length;
+                });
+              }, Promise.resolve());
+            });
+        });
+      })(items.slice(i, i + BATCH));
+    }
+    return chain.then(function () { flush(true); return { saved: saved, failed: failed, how: 'zip' }; });
   }
 
   function asDownloads(got, zipName, progress) {
@@ -187,5 +196,35 @@
     });
   }
 
-  KT.photoTools = { save: save, zip: zip, crc32: crc32, slug: slug };
+  /* ----------------------------------------------------------- web copy -- */
+  function webCopy(file, maxEdge, quality) {
+    maxEdge = maxEdge || 2048; quality = quality || 0.85;
+    var decode = window.createImageBitmap
+      ? createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return viaImage(file); })
+      : viaImage(file);
+    return decode.then(function (img) {
+      var w = img.width, h = img.height, k = Math.min(1, maxEdge / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      if (img.close) img.close();
+      return new Promise(function (ok, no) {
+        c.toBlob(function (b) { b ? ok(b) : no(new Error('encode')); }, 'image/jpeg', quality);
+      });
+    }).catch(function () {
+      var e = new Error('We couldn’t read ' + (file.name || 'that file') + ' as a photo.');
+      e.code = 'unreadable';
+      throw e;
+    });
+  }
+  function viaImage(file) {
+    return new Promise(function (ok, no) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); ok(img); };
+      img.onerror = function () { URL.revokeObjectURL(url); no(new Error('decode')); };
+      img.src = url;
+    });
+  }
+
+  KT.photoTools = { save: save, zip: zip, crc32: crc32, slug: slug, webCopy: webCopy };
 })();

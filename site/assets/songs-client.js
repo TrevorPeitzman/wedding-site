@@ -137,7 +137,32 @@
         hidePhoto: function (key, id, hidden) { return rpc('admin_hide_photo', { p_key: key, p_photo_id: id, p_hidden: !!hidden }); },
         // Shot counters per pass; a reset keeps the photos already taken.
         shots: function (key) { return rpc('admin_shots', { p_key: key }); },
-        resetShots: function (key, token) { return rpc('admin_reset_shots', { p_key: key, p_token: token || null }); }
+        resetShots: function (key, token) { return rpc('admin_reset_shots', { p_key: key, p_token: token || null }); },
+        // The photo album: the original plus a 2048px copy, both to the
+        // private `album` bucket through signed upload links.
+        albumList: function (key) {
+          return fn({ action: 'album_list', key: key }, 'camera').then(function (r) { return r.photos; });
+        },
+        albumUpload: function (key, file, credit) {
+          var ext = albumExt(file);
+          if (!ext) return Promise.reject(refusal('bad_type', 'JPEG, PNG or WebP photos only.'));
+          return KT.photoTools.webCopy(file).then(function (web) {
+            return fn({ action: 'album_reserve', key: key, name: file.name, ext: ext, credit: credit || null }, 'camera')
+              .then(function (a) {
+                var bucket = sb.storage.from('album');
+                var check = function (r) {
+                  if (r.error) throw refusal('upload_failed', 'The upload didn’t finish. Try that one again.');
+                };
+                return bucket.uploadToSignedUrl(a.full.path, a.full.token, file, { contentType: ALBUM_TYPES[ext], upsert: true })
+                  .then(check)
+                  .then(function () { return bucket.uploadToSignedUrl(a.web.path, a.web.token, web, { contentType: 'image/jpeg', upsert: true }); })
+                  .then(check)
+                  .then(function () { return rpc('admin_album_confirm', { p_key: key, p_id: a.id }); });
+              });
+          });
+        },
+        albumHide: function (key, id, hidden) { return rpc('admin_album_hide', { p_key: key, p_id: id, p_hidden: !!hidden }); },
+        albumDelete: function (key, id) { return fn({ action: 'album_delete', key: key, id: id }, 'camera'); }
       },
       // Disposable camera. Every call needs a guest session: the pass the
       // phone claimed is the camera's identity.
@@ -178,6 +203,13 @@
       }
     };
     return api;
+  }
+
+  var ALBUM_TYPES = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+  function albumExt(file) {
+    var byType = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type];
+    var m = /\.(jpe?g|png|webp)$/i.exec(file.name || '');
+    return byType || (m ? m[1].toLowerCase().replace('jpeg', 'jpg') : null);
   }
 
   /* ------------------------------------------------------------ demo -- */
@@ -250,6 +282,27 @@
     });
     return { shots_per_pass: 12, passes: list };
   }
+  // Demo album: four sample pictures, plus whatever is uploaded in this tab
+  // (kept in memory). Hidden and deleted ones are remembered in this browser.
+  var demoAlbumList = null;
+  function demoAlbumState() {
+    try { return JSON.parse(localStorage.getItem('kt-album-demo')) || { hidden: {}, gone: {} }; } catch (e) { return { hidden: {}, gone: {} }; }
+  }
+  function demoAlbum() {
+    if (!demoAlbumList) {
+      demoAlbumList = [];
+      for (var i = 0; i < 4; i++) {
+        var url = demoPhotoUrl(40 + i);
+        demoAlbumList.push({ id: 'demo-album-' + i, ext: 'jpg', name: 'DSC_00' + (10 + i) + '.jpg', credit: 'Demo photographer',
+          bytes: 6000000, uploaded_at: new Date(Date.parse('2026-11-22T10:00:00-08:00') + i * 60000).toISOString(),
+          web_url: url, full_url: url });
+      }
+    }
+    var st = demoAlbumState();
+    return demoAlbumList.filter(function (a) { return !st.gone[a.id]; })
+      .map(function (a) { return Object.assign({}, a, { hidden: !!st.hidden[a.id] }); });
+  }
+  function saveDemoAlbumState(st) { try { localStorage.setItem('kt-album-demo', JSON.stringify(st)); } catch (e) {} }
   function demoFeatures() {
     var f = null;
     try { f = JSON.parse(localStorage.getItem('kt-features-demo')); } catch (e) {}
@@ -513,6 +566,33 @@
           });
         },
         shots: function (key) { return admin(key, function () { return demoShots(); }); },
+        albumList: function (key) {
+          return admin(key, function () { return demoAlbum().slice().reverse(); });
+        },
+        albumUpload: function (key, file, credit) {
+          var ext = albumExt(file);
+          if (!key) return fail('not_organizer', 'That organizer link is not valid.');
+          if (!ext) return fail('bad_type', 'JPEG, PNG or WebP photos only.');
+          return KT.photoTools.webCopy(file).then(function (web) {
+            demoAlbum();
+            var a = { id: 'demo-up-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), ext: ext, name: file.name,
+                      credit: credit || null, bytes: file.size, uploaded_at: new Date().toISOString(),
+                      web_url: URL.createObjectURL(web), full_url: URL.createObjectURL(file) };
+            demoAlbumList.push(a);
+            return later(a);
+          });
+        },
+        albumHide: function (key, id, hidden) {
+          return admin(key, function () {
+            var st = demoAlbumState();
+            if (hidden) st.hidden[id] = true; else delete st.hidden[id];
+            saveDemoAlbumState(st);
+            return { id: id, hidden: !!hidden };
+          });
+        },
+        albumDelete: function (key, id) {
+          return admin(key, function () { var st = demoAlbumState(); st.gone[id] = true; saveDemoAlbumState(st); return { ok: true }; });
+        },
         resetShots: function (key, token) {
           return admin(key, function () {
             var r = demoResets(), list = demoShots().passes, now = new Date().toISOString();
@@ -566,7 +646,8 @@
           var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(cam().reveal_at || DEMO_REVEAL);
           if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
           return later({ ok: true, photos: demoPhotos(false).filter(function (p) { return !p.hidden; })
-            .map(function (p) { return { path: p.path, url: p.url }; }) });
+            .map(function (p) { return { path: p.path, url: p.url }; }),
+            album: demoAlbum().filter(function (a) { return !a.hidden; }) });
         }
       },
       // Demo pass: a sample guest once a ?pass= link was opened. The Wallet
@@ -614,7 +695,7 @@
       admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
                features: down, setFeature: down, setCamera: down, rehearsal: down, makeTestPasses: down,
                resetTestPass: down, deleteTestPasses: down, clearSongs: down, photos: down, hidePhoto: down,
-               shots: down, resetShots: down },
+               shots: down, resetShots: down, albumList: down, albumUpload: down, albumHide: down, albumDelete: down },
       camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down },
       wallet: { card: down, appleUrl: function () { return '#'; } } });
   };

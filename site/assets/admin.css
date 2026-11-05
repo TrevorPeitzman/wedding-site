@@ -39,3 +39,5 @@
 .adm-photo-act .kt-choice span { padding: var(--space-2) var(--space-3); font-size: 13px; }
 #photo-table { max-width: 16em; }
 .adm-pass .kt-hint { grid-column: 1 / -1; margin: 0; }
+.adm-photo-act .adm-delete { color: var(--danger); }
+#album-files { padding: var(--space-2); }

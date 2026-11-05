@@ -40,9 +40,9 @@ site/                       static pages (no build step)
   songs/                    guest song board; songs/dj/ is the DJ view
   dj/                       shortcut: /dj/#key=… → /songs/dj/#key=…
   camera/                   disposable camera (pass required, no peeking)
-  photos/                   the reveal: everyone's photos, guests with a pass; select + save
+  photos/                   the reveal: everyone's photos + the album, guests with a pass; select + save
   p/                        QR landing page (/p/?pass=<token>), never switched off
-  admin/                    organizer screen: feature switches + times, camera, reveal, photos, rehearsal
+  admin/                    organizer screen: feature switches + times, camera, reveal, photos, album, rehearsal
   404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
@@ -54,14 +54,14 @@ site/                       static pages (no build step)
   assets/songs.js, dj.js    the two song pages
   assets/camera.js          capture, resize, IndexedDB queue, retries
   assets/photos.js          the gallery
-  assets/photo-tools.js     save photos: share sheet on phones (up to 10), else .jpg / .zip (built here)
+  assets/photo-tools.js     save photos: share sheet on phones (up to 10), else .jpg / .zip (built here); 2048px copies
   assets/admin.js           the organizer screen
   assets/wallet.js          /p/: on-screen boarding pass + device-aware Wallet button
 supabase/
-  config.toml               functions + the photos bucket (deployed by the integration)
+  config.toml               functions + the photos, wallet and album buckets (deployed by the integration)
   migrations/               schema + rules (the API is these functions)
   functions/songs/          Spotify search + submit (Deno)
-  functions/camera/         reserve -> signed upload URL; gallery signed URLs; organizer photo list
+  functions/camera/         reserve -> signed upload URL; gallery signed URLs; organizer photo list; album uploads
   functions/wallet/         GET ?t=<token> -> the guest's .pkpass (verify_jwt off)
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
 scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
@@ -169,6 +169,9 @@ The roadmap drawing is in the Event Webapp Plan doc.
 ### 1. Foundations ✅ (Nov 4)
 Static Home, Schedule (timeline + room map), Details; day/night themes;
 rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
+- ✅ Home: Wi-Fi card (Linden Club Guest / 24Welcome in plain text; **Join
+  Wi-Fi** copies the password, since a page can't join a network; a WIFI: QR
+  for another phone to scan).
 - ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
   items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
   7:00, grand entrance 7:15 … last call 10:15, good night and the party bus
@@ -257,6 +260,11 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
   up to 10, so they land in the camera roll), or Save all (.zip files).
 - Organizer export: `/admin/` → Download all, or see supabase/README.md.
+- ✅ Photo album (`/admin/` → Photo album): photos from other cameras, uploaded
+  with an optional credit; the original (JPEG/PNG/WebP, 40 MB) plus a 2048px
+  copy made in the browser go to the private `album` bucket. Guests see them
+  on `/photos/` after the reveal under "More from the night"; Select / Save
+  give them the originals. Hide or delete from `/admin/`.
 - ✅ Shots by guest (`/admin/` → Camera): each pass's count; **Reset shots**
   for one guest or everyone gives the full count back and keeps their photos
   (`passes.shots_reset_at`; earlier shots stop counting).

@@ -1,7 +1,9 @@
 /* The reveal: everyone's disposable-camera photos, for guests with a claimed
  * pass, from photos_reveal_at on. Signed links last an hour; reload for more.
  * Tap a photo to open it; Select picks some to save, Save all takes every
- * one (the share sheet on a phone for up to 10, otherwise .zip files). */
+ * one (the share sheet on a phone for up to 10, otherwise .zip files).
+ * The album (photos from other cameras, added in /admin/) follows in its
+ * own section; its downloads are the full-size originals. */
 (function () {
   'use strict';
   var KT = window.KT;
@@ -29,24 +31,31 @@
   function fileName(i) { return 'KT1121-' + ('00' + (i + 1)).slice(-3) + '.jpg'; }
   function pickedList() { return photos.filter(function (p, i) { return picked[i]; }); }
 
-  function render() {
-    var grid = $('grid');
-    grid.innerHTML = '';
-    photos.forEach(function (p, i) {
-      var li = document.createElement('li'), a = document.createElement('a'), img = document.createElement('img');
-      a.href = p.url; a.target = '_blank'; a.rel = 'noopener';
-      img.src = p.url; img.loading = 'lazy'; img.alt = 'Photo ' + (i + 1) + ' of ' + photos.length;
-      a.appendChild(img); li.appendChild(a);
-      // Shown only while selecting: covers the photo, so a tap picks it.
-      var label = document.createElement('label'), box = document.createElement('input'), mark = document.createElement('span');
-      label.className = 'gal-check';
-      box.type = 'checkbox'; box.setAttribute('data-i', i);
-      box.setAttribute('aria-label', 'Choose photo ' + (i + 1));
-      mark.setAttribute('aria-hidden', 'true');
-      label.appendChild(box); label.appendChild(mark); li.appendChild(label);
-      grid.appendChild(li);
-    });
-    grid.hidden = false;
+  function tile(p, i) {
+    var li = document.createElement('li'), a = document.createElement('a'), img = document.createElement('img');
+    a.href = p.dl; a.target = '_blank'; a.rel = 'noopener';
+    img.src = p.url; img.loading = 'lazy'; img.alt = 'Photo ' + (i + 1) + ' of ' + photos.length;
+    a.appendChild(img); li.appendChild(a);
+    // Shown only while selecting: covers the photo, so a tap picks it.
+    var label = document.createElement('label'), box = document.createElement('input'), mark = document.createElement('span');
+    label.className = 'gal-check';
+    box.type = 'checkbox'; box.setAttribute('data-i', i);
+    box.setAttribute('aria-label', 'Choose photo ' + (i + 1));
+    mark.setAttribute('aria-hidden', 'true');
+    label.appendChild(box); label.appendChild(mark); li.appendChild(label);
+    return li;
+  }
+
+  function render(credits) {
+    var grids = { camera: $('grid'), album: $('album-grid') }, counts = { camera: 0, album: 0 };
+    grids.camera.innerHTML = ''; grids.album.innerHTML = '';
+    photos.forEach(function (p, i) { grids[p.section].appendChild(tile(p, i)); counts[p.section]++; });
+    var both = counts.camera && counts.album;
+    $('camera-section').hidden = !counts.camera;
+    $('camera-title').hidden = !both;
+    $('album-section').hidden = !counts.album;
+    $('album-credit').hidden = !credits.length;
+    $('album-credit').textContent = credits.join(' · ');
     $('tools').hidden = false;
     update();
   }
@@ -55,9 +64,11 @@
     var n = pickedList().length;
     $('count').textContent = plural(photos.length);
     $('grid').classList.toggle('is-selecting', selecting);
+    $('album-grid').classList.toggle('is-selecting', selecting);
     $('select').setAttribute('aria-pressed', String(selecting));
     $('select').textContent = selecting ? 'Done' : 'Select';
-    Array.prototype.forEach.call($('grid').children, function (li, i) {
+    Array.prototype.forEach.call(document.querySelectorAll('#grid > li, #album-grid > li'), function (li) {
+      var i = Number(li.querySelector('input').getAttribute('data-i'));
       li.classList.toggle('is-picked', !!picked[i]);
       li.querySelector('input').checked = !!picked[i];
       var a = li.querySelector('a');
@@ -79,7 +90,7 @@
     busy = true; update();
     var note = $('bar-note');
     note.textContent = 'Getting ready…';
-    KT.photoTools.save(list.map(function (p) { return { url: p.url, name: p.name }; }), {
+    KT.photoTools.save(list.map(function (p) { return { url: p.dl, name: p.name }; }), {
       zipName: zipName,
       onProgress: function (done, total, label) { note.textContent = label + ' ' + done + ' of ' + total + '…'; },
       ask: function (label) {
@@ -110,18 +121,20 @@
     update();
   });
   $('done').addEventListener('click', function () { selecting = false; picked = {}; update(); });
-  $('grid').addEventListener('change', function (ev) {
+  function onPick(ev) {
     var i = ev.target.getAttribute('data-i');
     if (i == null) return;
     if (ev.target.checked) picked[i] = true; else delete picked[i];
     update();
-  });
+  }
+  $('grid').addEventListener('change', onPick);
+  $('album-grid').addEventListener('change', onPick);
   $('save-picked').addEventListener('click', function () {
     if (pendingAsk) return pendingAsk();
     save(pickedList(), 'KT1121-photos', this);
   });
   $('save-all').addEventListener('click', function () {
-    if (photos.length > 100 && !confirm('Save all ' + photos.length + ' photos? They come as .zip files of 100 each, so it takes a while. Keep this page open until they’re done.')) return;
+    if (photos.length > 100 && !confirm('Save all ' + photos.length + ' photos? They come as several .zip files, so it takes a while. Keep this page open until they’re done.')) return;
     save(photos, 'KT1121-photos', $('save-picked'));
   });
 
@@ -133,9 +146,16 @@
       return;
     }
     return api.camera.gallery().then(function (g) {
-      if (!g.photos.length) { notice('info', 'Nothing yet', 'No photos have come through.'); return; }
-      photos = g.photos.map(function (p, i) { return { url: p.url, name: fileName(i) }; });
-      render();
+      var album = g.album || [];
+      if (!g.photos.length && !album.length) { notice('info', 'Nothing yet', 'No photos have come through.'); return; }
+      photos = g.photos.map(function (p, i) { return { url: p.url, dl: p.url, name: fileName(i), section: 'camera' }; })
+        .concat(album.map(function (a, i) {
+          return { url: a.web_url, dl: a.full_url, section: 'album',
+                   name: 'KT1121-album-' + ('00' + (i + 1)).slice(-3) + '.' + (a.ext || 'jpg') };
+        }));
+      var credits = [];
+      album.forEach(function (a) { if (a.credit && credits.indexOf(a.credit) < 0) credits.push(a.credit); });
+      render(credits);
     });
   }).catch(function (err) {
     $('loading').hidden = true;

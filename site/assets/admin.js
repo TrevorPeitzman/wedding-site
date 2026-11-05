@@ -383,6 +383,86 @@
     phSave(list, 'KT1121-photos' + (t === 'test' ? '-test' : t ? '-table-' + t : ''), this);
   });
 
+  /* ---------------------------------------------------------- photo album -- */
+  var albumList = null;
+  function mb(n) { return n ? (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB' : ''; }
+  function renderAlbum() {
+    var list = albumList || [];
+    var hidden = list.filter(function (a) { return a.hidden; }).length;
+    $('album-count').textContent = list.length + ' photo' + (list.length === 1 ? '' : 's') + ' in the album' + (hidden ? ' · ' + hidden + ' hidden' : '');
+    $('album').innerHTML = list.length ? list.map(function (a) {
+      return '<li class="adm-photo' + (a.hidden ? ' is-hidden' : '') + '">' +
+        '<a class="adm-thumb" href="' + esc(a.full_url) + '" target="_blank" rel="noopener"><img src="' + esc(a.web_url) + '" loading="lazy" alt="' + esc(a.name || 'Album photo') + '"></a>' +
+        '<p class="adm-cap"><span class="cam-shot-name">' + esc(a.name || 'Photo') + '</span>' +
+        '<span>' + esc([a.credit, mb(a.bytes)].filter(Boolean).join(' · ')) + '</span>' +
+        (a.hidden ? '<span class="cam-state is-no">Hidden</span>' : '') + '</p>' +
+        '<div class="adm-photo-act">' +
+        '<button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" data-album-hide="' + esc(a.id) + '">' + (a.hidden ? 'Show' : 'Hide') + '</button>' +
+        '<button class="kt-btn kt-btn-quiet kt-btn-sm adm-delete" type="button" data-album-delete="' + esc(a.id) + '">Delete</button>' +
+        '</div></li>';
+    }).join('') : '<li class="cam-empty">No album photos yet.</li>';
+    $('album').hidden = false;
+    $('album-load').textContent = 'Refresh';
+  }
+  function loadAlbum() {
+    $('album-load').disabled = true;
+    return api.admin.albumList(key).then(function (list) { albumList = list; renderAlbum(); })
+      .catch(function (err) { toast(err.message, false); })
+      .then(function () { $('album-load').disabled = false; });
+  }
+  $('album-load').addEventListener('click', loadAlbum);
+  $('album-files').addEventListener('change', function () {
+    var n = this.files.length;
+    $('album-upload').textContent = n ? 'Upload ' + n + ' photo' + (n === 1 ? '' : 's') : 'Upload';
+  });
+  $('album-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var files = Array.prototype.slice.call($('album-files').files), credit = $('album-credit').value.trim();
+    if (!files.length) return;
+    var progress = $('album-progress'), done = 0, failed = [];
+    var tooBig = files.filter(function (f) { return f.size > 40 * 1048576; });
+    files = files.filter(function (f) { return f.size <= 40 * 1048576; });
+    tooBig.forEach(function (f) { failed.push(f.name + ' (over 40 MB)'); });
+    $('album-upload').disabled = true; progress.hidden = false;
+    var say = function () { progress.textContent = 'Uploading ' + Math.min(done + 1, files.length) + ' of ' + files.length + '… Keep this page open.'; };
+    say();
+    // Two at a time: originals can be large.
+    var next = 0;
+    function worker() {
+      if (next >= files.length) return Promise.resolve();
+      var f = files[next++];
+      return api.admin.albumUpload(key, f, credit).catch(function (err) { failed.push(f.name + ' (' + err.message + ')'); })
+        .then(function () { done++; say(); return worker(); });
+    }
+    Promise.all([worker(), worker()]).then(function () {
+      var ok = files.length - (failed.length - tooBig.length);
+      progress.textContent = failed.length ? 'Not uploaded: ' + failed.join('; ') : '';
+      progress.hidden = !failed.length;
+      toast(ok + ' photo' + (ok === 1 ? '' : 's') + ' added to the album.' + (failed.length ? ' ' + failed.length + ' didn’t make it.' : ''), ok ? true : false);
+      $('album-form').reset(); $('album-upload').textContent = 'Upload'; $('album-upload').disabled = false;
+      return loadAlbum();
+    });
+  });
+  $('album').addEventListener('click', function (ev) {
+    var h = ev.target.closest('[data-album-hide]'), d = ev.target.closest('[data-album-delete]');
+    var id = h ? h.dataset.albumHide : d ? d.dataset.albumDelete : null;
+    var a = id && (albumList || []).filter(function (x) { return String(x.id) === id; })[0];
+    if (!a) return;
+    if (h) {
+      h.disabled = true;
+      api.admin.albumHide(key, a.id, !a.hidden).then(function (r) {
+        a.hidden = r.hidden; renderAlbum();
+        toast(r.hidden ? 'Hidden from guests.' : 'Back in the album.');
+      }).catch(function (err) { h.disabled = false; toast(err.message, false); });
+    } else {
+      if (!confirm('Delete ' + (a.name || 'this photo') + ' from the album? The file is removed for good.')) return;
+      d.disabled = true;
+      api.admin.albumDelete(key, a.id).then(function () {
+        albumList = albumList.filter(function (x) { return x !== a; }); renderAlbum(); toast('Deleted.');
+      }).catch(function (err) { d.disabled = false; toast(err.message, false); });
+    }
+  });
+
   /* ----------------------------------------------------------- rehearsal -- */
   var SITE = 'https://wedding.peitzman.net';
   function renderRehearsal(r) {
