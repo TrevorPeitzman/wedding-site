@@ -125,3 +125,12 @@ p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   .site-nav a, .theme-toggle { transition: none !important; }
 }
+
+/* Schedule: the sunset, a faint marker above the first item. */
+.tl-sunset { color: var(--text-muted); }
+.tl-sunset .kt-tl-time { font-weight: 400; font-size: 13px; padding-top: 2px; }
+.tl-sunset .kt-tl-content { display: flex; align-items: center; gap: var(--space-3); padding-bottom: var(--space-5); }
+.tl-sunset .kt-tl-content::after { content: ""; flex: 1; border-top: 1px dashed var(--rule); }
+.tl-sun { position: relative; width: 18px; height: 13px; margin-top: 4px; color: var(--brass); background: var(--ground); }
+.tl-sunset-word { margin: 0; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+#party-bus { scroll-margin-top: var(--space-6); }

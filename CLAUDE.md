@@ -171,7 +171,10 @@ Static Home, Schedule (timeline + room map), Details; day/night themes;
 rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
   items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
-  7:00, grand entrance 7:15 … last call 10:15, good night 11:00). The map is
+  7:00, grand entrance 7:15 … last call 10:15, good night and the party bus
+  11:00; photobooth until 7:00 and 8:00 – 10:00; a faint sunset marker at
+  4:47 PM). The party bus card links to its Partiful RSVP (a link out: its
+  RSVP needs a sign-in, which an iframe can't do reliably). The map is
   the venue's floor plan, traced to SVG paths (theme colors, the current room
   lit by `site.js`).
 
