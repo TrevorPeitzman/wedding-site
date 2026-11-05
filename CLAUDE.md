@@ -174,7 +174,11 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   7:00, grand entrance 7:15 … last call 10:15, good night and the party bus
   11:00; photobooth until 7:00 and 8:00 – 10:00; a faint sunset marker at
   4:47 PM). The party bus card links to its Partiful RSVP (a link out: its
-  RSVP needs a sign-in, which an iframe can't do reliably). The map is
+  RSVP needs a sign-in, which an iframe can't do reliably). The 9:30 snack
+  is a surprise: "? ? ? ? ?" and inflight refreshments, never named.
+  **Show restrooms** on the map: men's in the strip between the Finery Bar and
+  the Uptown Ballroom, women's (three stalls) by Coat Check, family
+  (single) by the Terrace Bar; the map key lists them too. The map is
   the venue's floor plan, traced to SVG paths (theme colors, the current room
   lit by `site.js`).
 
@@ -186,6 +190,8 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   on purpose; see the comment there).
 - ✅ Pages live at wedding.peitzman.net (TLS provisioning on Nov 4).
 - ☐ DJ walkthrough (questions in `docs/songs.md`).
+- Easter egg: requesting "Hotel Room Service" by Pitbull opens a note
+  (`#egg` in `songs/index.html`, `easterEgg()` in `songs.js`).
 
 ### 3. Details live (by Nov 10)
 - Fill the `EDIT ME` cards on the Details page from Zola and un-hide them.

@@ -134,3 +134,10 @@ p { margin: 0; }
 .tl-sun { position: relative; width: 18px; height: 13px; margin-top: 4px; color: var(--brass); background: var(--ground); }
 .tl-sunset-word { margin: 0; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
 #party-bus { scroll-margin-top: var(--space-6); }
+
+/* Restrooms on the floor plan, shown by the "Show restrooms" button. */
+.kt-map .plan-wc { display: none; }
+.kt-map.show-wc .plan-wc { display: inline; }
+.kt-map .wc-room { fill: var(--brand); fill-opacity: .3; stroke: var(--brand); stroke-width: 3; }
+.kt-map .wc-lead { stroke: var(--brand); stroke-width: 2.5; fill: none; }
+.kt-map svg .wc-lbl { font-size: 26px; font-weight: 700; fill: var(--brand); }

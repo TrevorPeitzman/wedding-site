@@ -89,4 +89,17 @@
 
   update();
   setInterval(update, 60 * 1000);
+
+  // "Show restrooms": they're tucked away, so the map can point them out.
+  var wcBtn = document.getElementById('show-wc'), map = document.querySelector('.kt-map');
+  if (wcBtn && map) {
+    wcBtn.hidden = false;
+    wcBtn.addEventListener('click', function () {
+      var on = !map.classList.contains('show-wc');
+      map.classList.toggle('show-wc', on);
+      wcBtn.setAttribute('aria-pressed', String(on));
+      wcBtn.textContent = on ? 'Hide restrooms' : 'Show restrooms';
+      if (on && map.scrollIntoView) map.querySelector('svg').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  }
 })();
