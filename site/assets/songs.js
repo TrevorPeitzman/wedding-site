@@ -156,6 +156,20 @@
     return n;
   }
 
+  // A little something for one particular request.
+  function squash(v) { return String(v || '').toLowerCase().replace(/[^a-z]/g, ''); }
+  function easterEgg(track) {
+    if (squash(track.title).indexOf('hotelroomservice') < 0 || squash(track.artist).indexOf('pitbull') < 0) return;
+    var dlg = $('egg');
+    if (dlg && dlg.showModal) {
+      setTimeout(function () { if (!dlg.open) dlg.showModal(); }, 600);
+    } else {
+      setTimeout(function () { toast('A timeless classic. You’d probably get along well with Connor Passe.'); }, 3600);
+    }
+  }
+  var eggClose = $('egg-close');
+  if (eggClose) eggClose.addEventListener('click', function () { $('egg').close(); });
+
   function submit(track, done) {
     if (busy) return;
     busy = true;
@@ -166,6 +180,7 @@
           : 'Added! Now get your table to vote for it.');
         q.value = ''; results.hidden = true; searchMsg.textContent = '';
         if (done) done();
+        easterEgg(track);
         return refresh();
       })
       .catch(function (err) { toast(err.message, 'danger'); })

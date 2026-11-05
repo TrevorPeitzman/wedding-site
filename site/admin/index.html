@@ -106,6 +106,19 @@
               <button class="kt-btn kt-btn-secondary" type="button" id="release">Release photos now</button>
             </div>
           </form>
+          <div class="stack adm-danger">
+            <p class="kt-label">Shots by guest</p>
+            <p class="kt-hint">A reset gives a pass all its shots again. Photos already taken stay uploaded and in the gallery.</p>
+            <div class="adm-row">
+              <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" id="shots-load">Show guests</button>
+              <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="shots-reset-all">Reset everyone’s shots</button>
+            </div>
+            <div class="kt-field" id="shots-find" hidden>
+              <label class="kt-label" for="shots-search">Find a guest</label>
+              <input class="kt-input" id="shots-search" type="search" autocomplete="off" placeholder="Name or table">
+            </div>
+            <ol class="cam-shots" id="shot-list" aria-label="Shots by guest" hidden></ol>
+          </div>
         </div>
       </section>
 

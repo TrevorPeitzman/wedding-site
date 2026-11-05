@@ -98,6 +98,7 @@ each one); the DJ keeps the DJ view open.
 | A guest lost their paper pass | They can still use the song board without one; the camera needs a pass (look up their token in `private/print-merge-with-qr.csv`). |
 | Requests get rowdy | DJ view: hide a song, block an artist, or switch off "Guests can request". |
 | You want requests closed | DJ view switch, or `/admin/` → Song requests → Closes. |
+| A guest used their shots and wants more | `/admin/` → Camera → Shots by guest → find them → **Reset shots**. Their photos stay. |
 | A photo shouldn't be in the gallery | `/admin/` → Photos → **Hide** on it. It still counts as one of that pass's shots; **Show** puts it back. |
 | Something is wrong with a feature | `/admin/` → switch it off; pages drop it on their next load. |
 | Supabase is down | The schedule, details and landing pages still work (static). Songs and camera show an error; shots stay saved on phones and upload later. Check https://status.supabase.com. |

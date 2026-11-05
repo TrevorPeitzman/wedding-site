@@ -31,6 +31,7 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
 | Organizer photos: list, hide | `camera` function `admin_photos`, `rpc('admin_hide_photo')` | organizer key |
+| Shots by guest, reset a counter | `rpc('admin_shots' / 'admin_reset_shots')` | organizer key |
 | Rehearsal tools | `rpc('admin_rehearsal' / 'admin_make_test_passes' / 'admin_clear_songs')`, `camera` function `purge` | organizer key |
 
 Tables are never exposed: RLS is on with no policies, and the API roles have
@@ -52,11 +53,15 @@ the window they are refused with `feature_soon` or `feature_closed`.
    to `main` applies new `migrations/`, deploys the functions and creates the
    `photos` bucket (see `DEPLOY.md`: the working directory is `.`). Check
    Database → Migrations before the next step.
-3. **Keys**, in the SQL editor, each a long random string of your own:
+3. **Keys**, in the SQL editor, each a long random string of your own, **at
+   least 16 characters** (shorter ones are refused). To make one:
+   `select encode(extensions.gen_random_bytes(18), 'base64');`
    ```sql
    select app_private.set_admin_key('<DJ key>');
    select app_private.set_organizer_key('<organizer key>');
    ```
+   Setting a key again replaces the old one: links with the old key stop
+   working, and a browser that saved it asks for the new one.
    DJ view: `https://wedding.peitzman.net/songs/dj/#key=<DJ key>` (or `/dj/#key=…`).
    Organizer screen: `https://wedding.peitzman.net/admin/#key=<organizer key>`.
    The organizer key also opens the DJ view; the DJ key can't open the admin
@@ -123,6 +128,9 @@ update public.events set photos_reveal_at = now();          -- release the photo
   dashboard, or with the CLI (check `supabase storage cp --help` first; it's
   experimental): `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
 - Guests save from `/photos/` after the reveal: Select some or Save all.
+- Give a guest their shots back: `/admin/` → Camera → Shots by guest →
+  **Reset shots** (or **Reset everyone's shots**). Their photos stay; shots
+  taken before the reset just stop counting (`passes.shots_reset_at`).
 
 ## Rehearsal
 
@@ -146,6 +154,10 @@ update public.events set photos_reveal_at = now();          -- release the photo
 tests/sql/run.sh
 npx -y deno@2.1.4 check supabase/functions/*/index.ts
 ```
+
+Supabase runs pg-safeupdate for API calls: a `DELETE` or `UPDATE` without a
+`WHERE` fails there ("DELETE requires a WHERE clause") but works locally. A
+test checks that no public function has one.
 
 The SQL tests need only the Postgres server binaries (`initdb`, `pg_ctl`), not
 Docker or the Supabase CLI. `stub_supabase.sql` fakes the parts of Supabase

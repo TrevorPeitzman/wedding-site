@@ -119,6 +119,11 @@
 
   function load() {
     if (!key) { showKeyForm(); return Promise.resolve(); }
+    if (key.length < 16) {
+      key = null; try { localStorage.removeItem(STORE); } catch (e) {}
+      showKeyForm('Organizer keys are at least 16 characters. Set a longer one in the SQL editor, then use it here.');
+      return Promise.resolve();
+    }
     return api.admin.features(key).then(function (d) {
       data = d; $('key-form').hidden = true; $('admin').hidden = false; render(); loadRehearsal();
       $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -172,6 +177,54 @@
     if (!confirm('Release everyone’s photos now? Every guest with a pass can see them from this moment.')) return;
     api.admin.setCamera(key, { photos_reveal_at: 'now' })
       .then(function () { toast('The photos are out.'); return load(); })
+      .catch(function (err) { toast(err.message, false); });
+  });
+
+  /* ---------------------------------------------------- shots by guest -- */
+  var shotData = null;
+  function renderShots() {
+    var q = $('shots-search').value.trim().toLowerCase(), per = shotData.shots_per_pass;
+    var list = shotData.passes.filter(function (p) {
+      if (p.is_test) return false;   // test passes reset from Rehearsal
+      if (!q) return true;
+      var name = (p.first_name + ' ' + p.last_name).toLowerCase();
+      return name.indexOf(q) >= 0 || ('table ' + p.table_number) === q || String(p.table_number) === q;
+    });
+    $('shot-list').innerHTML = list.length ? list.map(function (p) {
+      var full = p.used >= per;
+      return '<li class="adm-pass"><span class="cam-shot-name">' + esc(p.first_name + ' ' + p.last_name) + '</span>' +
+        '<span class="cam-state' + (full ? ' is-no' : p.used ? ' is-wait' : '') + '">' + p.used + ' of ' + per + '</span>' +
+        '<span class="kt-hint">' + (p.table_number != null ? 'Table ' + esc(p.table_number) + ' · ' : '') +
+        p.uploaded + ' uploaded · ' + p.phones + ' phone' + (p.phones === 1 ? '' : 's') + '</span>' +
+        '<div class="adm-row"><button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" data-reset-shots="' + esc(p.token) + '"' +
+        (p.used ? '' : ' disabled') + '>Reset shots</button></div></li>';
+    }).join('') : '<li class="cam-empty">' + (q ? 'No one matches.' : 'No passes yet.') + '</li>';
+    $('shot-list').hidden = false;
+    $('shots-find').hidden = false;
+  }
+  function loadShots() {
+    $('shots-load').disabled = true;
+    return api.admin.shots(key).then(function (d) {
+      shotData = d; renderShots(); $('shots-load').textContent = 'Refresh';
+    }).catch(function (err) { toast(err.message, false); })
+      .then(function () { $('shots-load').disabled = false; });
+  }
+  $('shots-load').addEventListener('click', loadShots);
+  $('shots-search').addEventListener('input', function () { if (shotData) renderShots(); });
+  $('shot-list').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-reset-shots]');
+    if (!b) return;
+    var p = shotData.passes.filter(function (x) { return x.token === b.dataset.resetShots; })[0];
+    if (!p || !confirm('Give ' + p.first_name + ' ' + p.last_name + ' all ' + shotData.shots_per_pass + ' shots again? Their photos stay.')) return;
+    b.disabled = true;
+    api.admin.resetShots(key, p.token)
+      .then(function () { toast(p.first_name + '’s shots are reset.'); return loadShots(); })
+      .catch(function (err) { b.disabled = false; toast(err.message, false); });
+  });
+  $('shots-reset-all').addEventListener('click', function () {
+    if (!confirm('Reset every pass to a full camera? Photos already taken stay uploaded and in the gallery.')) return;
+    api.admin.resetShots(key, null)
+      .then(function (r) { toast('Shots reset on ' + r.reset + ' passes.'); return shotData ? loadShots() : null; })
       .catch(function (err) { toast(err.message, false); });
   });
 

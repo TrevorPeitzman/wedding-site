@@ -15,6 +15,13 @@
     var m = location.hash.match(/key=([^&]+)/);
     if (m) { localStorage.setItem(STORE, decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname); }
     key = localStorage.getItem(STORE);
+    // The organizer key opens this view too: an organizer arriving from
+    // /admin/ needn't type anything, and gets a link back.
+    var orgKey = localStorage.getItem('kt-org-key');
+    if (orgKey) {
+      if (!key) key = orgKey;
+      $('nav-admin').hidden = false;
+    }
   } catch (e) {}
 
   function esc(v) {

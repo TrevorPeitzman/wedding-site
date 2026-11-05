@@ -100,3 +100,8 @@
 .dj-rule { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--rule); }
 .dj-rule p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .dj-kind { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-muted); }
+
+/* The Hotel Room Service note. */
+.song-egg { border: 0; margin: auto; width: min(26rem, calc(100vw - 2 * var(--space-4))); box-sizing: border-box; color: var(--text); background: var(--surface); box-shadow: var(--shadow-card); }
+.song-egg::backdrop { background: var(--scrim); }
+.song-egg:not([open]) { display: none; }

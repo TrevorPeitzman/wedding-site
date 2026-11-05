@@ -108,9 +108,36 @@ p { margin: 0; }
 
 /* ---------- Schedule ---------- */
 .kt-tl-title .kt-tl-badge { font-family: var(--font-serif); }
-.kt-map .lbl { font-family: var(--font-serif); }
+/* The floor plan (traced from the venue's plan; source pixels as units). */
+.kt-map .plan-bg { fill: var(--surface); }
+.kt-map .plan-room { fill: transparent; transition: fill .3s ease; }
+.kt-map .plan-room.is-on { fill: var(--french-blue-wash); }
+.kt-map .plan-lines { fill: var(--text); }
+.kt-map .plan-solid { fill: var(--brass); }
+.kt-map svg text { font-family: var(--font-serif); text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 6px; stroke-linejoin: round; }
+.kt-map svg .lbl { font-size: 32px; fill: var(--text); }
+.kt-map svg .lbl-minor { font-size: 23px; fill: var(--text-muted); font-style: italic; }
+.kt-map svg .is-on .lbl { font-weight: 700; stroke: var(--french-blue-wash); }
+.kt-map svg .step circle { fill: var(--surface); stroke: var(--brass); stroke-width: 2.5; }
+.kt-map svg .step text { font-size: 22px; font-weight: 700; fill: var(--brass-deep); stroke: none; }
 
 /* Respect reduced motion for the few fades we add. */
 @media (prefers-reduced-motion: reduce) {
   .site-nav a, .theme-toggle { transition: none !important; }
 }
+
+/* Schedule: the sunset, a faint marker above the first item. */
+.tl-sunset { color: var(--text-muted); }
+.tl-sunset .kt-tl-time { font-weight: 400; font-size: 13px; padding-top: 2px; }
+.tl-sunset .kt-tl-content { display: flex; align-items: center; gap: var(--space-3); padding-bottom: var(--space-5); }
+.tl-sunset .kt-tl-content::after { content: ""; flex: 1; border-top: 1px dashed var(--rule); }
+.tl-sun { position: relative; width: 18px; height: 13px; margin-top: 4px; color: var(--brass); background: var(--ground); }
+.tl-sunset-word { margin: 0; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+#party-bus { scroll-margin-top: var(--space-6); }
+
+/* Restrooms on the floor plan, shown by the "Show restrooms" button. */
+.kt-map .plan-wc { display: none; }
+.kt-map.show-wc .plan-wc { display: inline; }
+.kt-map .wc-room { fill: var(--brand); fill-opacity: .3; stroke: var(--brand); stroke-width: 3; }
+.kt-map .wc-lead { stroke: var(--brand); stroke-width: 2.5; fill: none; }
+.kt-map svg .wc-lbl { font-size: 26px; font-weight: 700; fill: var(--brand); }
