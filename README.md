@@ -15,7 +15,7 @@ Guest web app for Katarina & Trevor's wedding, live at
 | `scripts/make_wallet_passes.py` | One signed Apple Wallet pass per guest ([docs/wallet.md](docs/wallet.md)) |
 | `tests/` | Database tests on a throwaway Postgres; Wallet pass generator tests |
 | `docs/` | [Runbook](docs/runbook.md) (rehearsal and the night), [Song requests](docs/songs.md) (rules, Spotify setup, DJ questions), [Wallet account setup](docs/wallet.md) |
-| `scripts/load_test.mjs` | Rehearsal load test: ~105 read-only phones on the song board |
+| `scripts/load_test.mjs` | Rehearsal load tests: 105 phones reading the board, or `--night`: 60 guests signing in, requesting, voting and uploading photos on test passes |
 
 Preview locally with `python3 -m http.server 8000 -d site`; add `?demo=1` to
 a page for demo mode. Deploying: [DEPLOY.md](DEPLOY.md). The plan, the design

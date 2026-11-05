@@ -423,7 +423,7 @@
     }
   });
   $('delete-tests').addEventListener('click', function () {
-    if (!confirm('Delete every test pass and its photos? Phones that used one go back to having no pass.')) return;
+    if (!confirm('Delete every test pass, its photos, and the song requests and votes made from phones on it? Phones that used one go back to having no pass.')) return;
     api.admin.deleteTestPasses(key)
       .then(function (r) { toast('Test passes deleted (' + r.removed + ' photos removed).'); return loadRehearsal(); })
       .catch(function (err) { toast(err.message, false); });

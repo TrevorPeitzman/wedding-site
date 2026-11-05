@@ -52,15 +52,38 @@ in a dim room on the venue's wifi and again on cellular.
 
 ### 3. Load test
 
-Once, deliberately, from a laptop (it reads the live project from
-`site/assets/config.js` and only reads, never writes):
+Two runs from a laptop, each once, deliberately, during rehearsal week (not
+within an hour of the event: each simulated phone in the second run uses one
+of the 300 anonymous sign-ins Supabase allows per IP address per hour).
+
+**a. Everyone reading the board** (read-only, writes nothing):
 
 ```bash
 node scripts/load_test.mjs --phones 105 --minutes 3
 ```
 
-Healthy: no errors, and `song_board` p95 well under a second. If you see
-`HTTP 429` or timeouts, tell the build session before the night.
+**b. The night** (60 guests at once doing everything: sign in, claim a test
+pass, open the pass card, read the board, search Spotify, request, vote, take
+600 KB photos). First open Song requests and Camera in `/admin/`. It uses the
+10 test passes (made if missing) and cleans up after itself with `--cleanup`
+(test passes, their photos, their song requests and votes):
+
+```bash
+node scripts/load_test.mjs --night --key '<organizer key>' --phones 60 --minutes 5 --cleanup
+```
+
+Healthy: **no ERRORS**, and p95 well under a second for the database steps
+(`song_board`, `vote`, `claim_pass`, `confirm_shot`) and under a few seconds
+for `search`, `reserve` and `upload` (those go to Spotify or carry a photo,
+and depend on your own upload speed). Refusals are the app saying no and are
+fine in moderation: `vote_cooldown`, `already_voted`, `out_of_shots` late in
+the run (10 test passes × 12 shots). `feature_soon`/`feature_closed` mean a
+feature wasn't open. If you see `HTTP 429`, `HTTP 5xx` or timeouts, tell the
+build session before the night. Try `--phones 105` too if the first run is
+clean.
+
+What this can't test is the venue's wifi and signal: that's the
+walk-through below, with real phones.
 
 ### 4. Venue walk-through
 

@@ -138,7 +138,10 @@ update public.events set photos_reveal_at = now();          -- release the photo
   Their photos are left out of the gallery; their shots can be reset.
 - **Delete test passes** removes them, their photo rows and their files.
   **Clear song board** deletes every request and vote (type CLEAR).
-- Load test: `node scripts/load_test.mjs --phones 105 --minutes 3` (read-only).
+- Load tests: `node scripts/load_test.mjs --phones 105 --minutes 3` (read-only), and
+  `--night --key '<organizer key>' --cleanup` (60 guests doing everything, on test passes).
+  Details in `docs/runbook.md`.
+- **Delete test passes** also removes song requests and votes made from phones on test passes.
 - Full checklist: `docs/runbook.md`.
 
 ## Before the day

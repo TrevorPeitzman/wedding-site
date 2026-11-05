@@ -66,7 +66,7 @@ supabase/
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
 scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
 scripts/requirements.txt    cryptography, Pillow, openpyxl
-scripts/load_test.mjs       N phones polling the song board (read-only), latency + errors
+scripts/load_test.mjs       load test: N phones on the board (read-only), or --night (full guest mix on test passes)
 tests/test_wallet_passes.py signs test passes with a throwaway certificate, verifies with openssl
 tests/sql/run.sh            migrations + SQL tests on a throwaway local Postgres
 docs/songs.md               song rules, Spotify app setup, DJ questions, decisions
@@ -281,7 +281,10 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   the gallery. Clean slate for the night: delete test passes (rows and photo
   files, via the `camera` function's organizer-only `purge`) and clear the
   song board (type CLEAR).
-- ✅ `scripts/load_test.mjs`: ~105 read-only phones polling the board.
+- ✅ `scripts/load_test.mjs`: ~105 read-only phones polling the board; `--night`
+  runs the full guest mix (sign-in, pass, board, Spotify search, requests,
+  votes, 600 KB photo uploads) on test passes, `--cleanup` after. Delete test
+  passes also removes their song requests and votes.
 - ✅ `docs/runbook.md`: phone checklist (iPhone Safari + Android Chrome, dim
   room, airplane mode, page closed mid-upload, screen lock, Wallet), load
   test, venue walk-through, the day before, the night's "if… then…", after.
