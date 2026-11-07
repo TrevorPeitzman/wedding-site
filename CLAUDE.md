@@ -90,7 +90,8 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
   `features()` and cached on the phone; the `DEFAULTS` in `features.js` are the
   fallback when Supabase is unreachable. In HTML: `data-feature="<name>"` on
   nav items, cards and mentions (hidden when off or closed), `data-requires` on
-  the tool, `data-until` on its "opens at" notice, `<html data-page-feature>`
+  the tool, `data-until` on its "opens at" notice, `data-yields` on what
+  steps aside while a feature is open, `<html data-page-feature>`
   on its page (sent home when off). A new feature needs a row in the
   migration's check list, a line in `features.js` and one in each rule group at
   the top of `site.css`. `/p/`, `/photos/` and `/admin/` belong to no feature.
@@ -181,6 +182,12 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   away whenever the server answers `has_pass` (`songs-client.js` →
   `KT.setHasPass`). With five items the nav tightens slightly on phones to stay
   on one line down to 320px.
+- ✅ **Camera** in the guest nav while the camera is open (`kt-open-camera`
+  from `features.js`); Details steps aside then (`data-yields="camera"`), as
+  six items don't fit on a phone. Details is switched off for the night
+  anyway (guests first see the site at the venue). Without JS, Details shows.
+- ✅ Schedule page leads with the map ("Finding your way", the 1-2-3 key and
+  **Show restrooms**), then the timeline.
 - ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
   items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
   7:00, grand entrance 7:15 … last call 10:15, good night and the party bus

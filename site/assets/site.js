@@ -125,7 +125,6 @@
       map.classList.toggle('show-wc', on);
       wcBtn.setAttribute('aria-pressed', String(on));
       wcBtn.textContent = on ? 'Hide restrooms' : 'Show restrooms';
-      if (on && map.scrollIntoView) map.querySelector('svg').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   }
 })();

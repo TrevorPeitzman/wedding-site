@@ -25,6 +25,7 @@
  *   data-requires="songs"  shown only while songs is open (the tool itself)
  *   data-until="songs"     shown only before songs opens (the "opens at" notice)
  *   data-opens="songs"     filled with the opening time, e.g. "5:45 PM on Saturday, November 21"
+ *   data-yields="camera"   hidden while camera is open (Details in the nav makes room for Camera)
  *   <html data-page-feature="songs">  the page belongs to songs (sent home when off)
  */
 (function () {
@@ -107,6 +108,7 @@
       var s = KT.feature(n);
       root.classList.toggle('kt-off-' + n, s === 'off' || s === 'closed');
       root.classList.toggle('kt-soon-' + n, s === 'soon');
+      root.classList.toggle('kt-open-' + n, s === 'open');
     });
   }
   apply();

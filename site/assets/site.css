@@ -48,6 +48,12 @@ img { max-width: 100%; height: auto; }
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
   min-height: 56px;
 }
+/* While the camera is open, Camera takes Details' place in the guest nav
+   (six items don't fit on a phone). Without JavaScript, Details stays. */
+.site-nav .nav-camera { display: none; }
+.kt-open-camera .site-nav .nav-camera { display: list-item; }
+.kt-open-camera [data-yields~="camera"] { display: none !important; }
+
 /* The header toggle is hidden, so the nav can take the whole row (room for
    "My pass" once this phone has one). */
 .site-nav { flex: 1 1 auto; min-width: 0; }
