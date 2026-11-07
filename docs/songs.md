@@ -82,3 +82,13 @@ and a real setlist. The answer to the first question decides how to capture it:
   the latest one on the guest board is a small change.
 - **Auto-block by tempo or time of night,** or importing a do-not-play list
   from a file.
+
+## Song details in the DJ view
+
+Each request shows its length, BPM and genre when known. Length is Spotify's.
+Spotify stopped giving new apps audio features (BPM) in November 2024, so the
+`songs` Edge Function takes the track's ISRC from Spotify and asks Deezer's
+public API (no key) for its BPM and its album's genre, falling back to
+Spotify's artist genres. It runs in the background after each request and
+when the DJ view loads; each track is looked up once. Deezer has no BPM for
+some songs (it reports 0, shown as blank), and typed-in requests have none.

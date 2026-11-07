@@ -8,6 +8,9 @@
 // POST { action: "request", spotify_id, requester_name? }
 // POST { action: "request", title, artist, requester_name? }   (manual entry)
 //                                                    -> { ok, action, request_id }
+// POST { action: "details", key }                    -> { ok, filled }
+//   DJ key: looks up BPM and genre for up to 10 requested Spotify tracks that
+//   haven't been looked up yet (also done in the background after each request).
 // Guest-facing refusals come back as 200 { ok: false, code, message, retry_after }
 // so the page can show them without unpacking an HTTP error.
 //
@@ -121,6 +124,69 @@ async function lookup(id: string): Promise<Track | null> {
   return normalize(await res.json());
 }
 
+// -------------------------------------------------------- BPM and genre --
+// Spotify stopped serving audio features (BPM) to new apps in Nov 2024, so:
+// the track's ISRC from Spotify, then Deezer's public API by ISRC for bpm and
+// the album's genre; Spotify's artist genres when Deezer has none. Anything
+// missing stays empty; a track is looked up once.
+
+// deno-lint-ignore no-explicit-any
+async function getJson(url: string, headers: Record<string, string> = {}): Promise<any> {
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data && !data.error ? data : null;
+}
+
+function titleCase(s: string) {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+async function fillDetails(limit: number): Promise<number> {
+  if (!LIVE) return 0;
+  const { data: todo, error } = await admin.rpc("track_details_todo", { p_limit: limit });
+  if (error) throw error;
+  let filled = 0;
+  for (const t of todo as { id: number; spotify_id: string }[]) {
+    let isrc: string | null = null, bpm: number | null = null, genre: string | null = null;
+    try {
+      const auth = { Authorization: `Bearer ${await spotifyToken()}` };
+      const sp = await getJson(`https://api.spotify.com/v1/tracks/${encodeURIComponent(t.spotify_id)}?market=${MARKET}`, auth);
+      isrc = sp?.external_ids?.isrc ?? null;
+      if (isrc) {
+        const dz = await getJson(`https://api.deezer.com/track/isrc:${encodeURIComponent(isrc)}`);
+        if (dz && Number(dz.bpm) > 0) bpm = Number(dz.bpm);
+        if (dz?.album?.id) {
+          const album = await getJson(`https://api.deezer.com/album/${dz.album.id}`);
+          genre = album?.genres?.data?.[0]?.name ?? null;
+        }
+      }
+      const artistId = sp?.artists?.[0]?.id;
+      if (!genre && artistId) {
+        const artist = await getJson(`https://api.spotify.com/v1/artists/${encodeURIComponent(artistId)}`, auth);
+        const g: string[] = artist?.genres ?? [];
+        if (g.length) genre = g.slice(0, 2).map(titleCase).join(", ");
+      }
+    } catch (err) {
+      console.error("details", t.spotify_id, err);
+    }
+    const { error: setError } = await admin.rpc("set_track_details", {
+      p_track_id: t.id, p_isrc: isrc, p_bpm: bpm, p_genre: genre,
+    });
+    if (setError) throw setError;
+    filled++;
+  }
+  return filled;
+}
+
+// Run after the response when the runtime allows it (Supabase Edge Runtime).
+function inBackground(p: Promise<unknown>) {
+  const done = p.catch((err) => console.error("background", err));
+  // deno-lint-ignore no-explicit-any
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(done);
+}
+
 // ------------------------------------------------------------------ server --
 
 Deno.serve(async (req) => {
@@ -173,7 +239,21 @@ Deno.serve(async (req) => {
         }
         throw error;
       }
+      if (track.spotify_id) inBackground(fillDetails(3));
       return json({ ok: true, ...data });
+    }
+
+    if (body.action === "details") {
+      // The DJ key, checked by the database (the DJ board refuses others).
+      const anon = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { error } = await anon.rpc("admin_board", { p_key: String(body.key ?? "") });
+      if (error) {
+        if (error.code === "P0001") return refuse(error.details ?? "refused", error.message);
+        throw error;
+      }
+      return json({ ok: true, filled: await fillDetails(10) });
     }
 
     return refuse("bad_request", "Unknown action.");
