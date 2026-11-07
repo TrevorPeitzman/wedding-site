@@ -19,6 +19,13 @@ public = false
 file_size_limit = "8MiB"
 allowed_mime_types = ["image/jpeg"]
 
+# The photo album: originals from other cameras (and a 2048px JPEG of each),
+# uploaded from /admin/, shown to guests after the reveal.
+[storage.buckets.album]
+public = false
+file_size_limit = "40MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
 # Opened as a plain link from Safari (no Authorization header): the pass
 # token in the URL is the credential, checked in the database.
 [functions.wallet]

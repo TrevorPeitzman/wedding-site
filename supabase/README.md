@@ -8,7 +8,8 @@ pages themselves are static on GitHub Pages and talk to this project directly.
 config.toml   Edge Functions + the photos bucket (the GitHub integration deploys both)
 migrations/   schema + every rule, as Postgres functions (the only API)
 functions/    songs: Spotify search and song submission
-              camera: signed upload URLs for reserved shots; gallery links after the reveal;
+              camera: signed upload URLs for reserved shots; gallery (and album) links after the reveal;
+                      organizer album uploads, list and delete;
                       organizer-only photo list with links ("admin_photos") and
                       "purge" of test passes' photo files (rehearsal)
               wallet: serves a guest's signed Apple pass to its token (no login)
@@ -32,6 +33,7 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
 | Organizer photos: list, hide | `camera` function `admin_photos`, `rpc('admin_hide_photo')` | organizer key |
 | Shots by guest, reset a counter | `rpc('admin_shots' / 'admin_reset_shots')` | organizer key |
+| Photo album: upload, list, hide, delete | `camera` function `album_reserve` / `album_list` / `album_delete`, `rpc('admin_album_confirm' / 'admin_album_hide')` | organizer key |
 | Rehearsal tools | `rpc('admin_rehearsal' / 'admin_make_test_passes' / 'admin_clear_songs')`, `camera` function `purge` | organizer key |
 
 Tables are never exposed: RLS is on with no policies, and the API roles have
@@ -128,6 +130,12 @@ update public.events set photos_reveal_at = now();          -- release the photo
   dashboard, or with the CLI (check `supabase storage cp --help` first; it's
   experimental): `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
 - Guests save from `/photos/` after the reveal: Select some or Save all.
+- **Photo album** (`/admin/` → Photo album): photos from other cameras. Each
+  is two files in the private `album` bucket, `<id>/full.<ext>` (the original:
+  JPEG, PNG or WebP, up to 40 MB) and `<id>/web.jpg` (2048px, made in the
+  browser for the grid); `public.album_photos` lists them. Guests see them on
+  `/photos/` after the reveal and save the originals. Zips split at 100 photos
+  or 200 MB.
 - Give a guest their shots back: `/admin/` → Camera → Shots by guest →
   **Reset shots** (or **Reset everyone's shots**). Their photos stay; shots
   taken before the reset just stop counting (`passes.shots_reset_at`).
@@ -138,7 +146,10 @@ update public.events set photos_reveal_at = now();          -- release the photo
   Their photos are left out of the gallery; their shots can be reset.
 - **Delete test passes** removes them, their photo rows and their files.
   **Clear song board** deletes every request and vote (type CLEAR).
-- Load test: `node scripts/load_test.mjs --phones 105 --minutes 3` (read-only).
+- Load tests: `node scripts/load_test.mjs --phones 105 --minutes 3` (read-only), and
+  `--night --key '<organizer key>' --cleanup` (60 guests doing everything, on test passes).
+  Details in `docs/runbook.md`.
+- **Delete test passes** also removes song requests and votes made from phones on test passes.
 - Full checklist: `docs/runbook.md`.
 
 ## Before the day

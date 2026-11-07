@@ -40,33 +40,33 @@ site/                       static pages (no build step)
   songs/                    guest song board; songs/dj/ is the DJ view
   dj/                       shortcut: /dj/#key=… → /songs/dj/#key=…
   camera/                   disposable camera (pass required, no peeking)
-  photos/                   the reveal: everyone's photos, guests with a pass; select + save
+  photos/                   the reveal: everyone's photos + the album, guests with a pass; select + save
   p/                        QR landing page (/p/?pass=<token>), never switched off
-  admin/                    organizer screen: feature switches + times, camera, reveal, photos, rehearsal
+  admin/                    organizer screen: feature switches + times, camera, reveal, photos, album, rehearsal
   404.html                  GitHub Pages' not-found page
   assets/ds/                design system files, copied VERBATIM
   assets/site.css           page layout (tokens only); songs/camera/admin.css per area
   assets/theme.js           sync <head>: Terrace/Finery, KT.now() rehearsal clock
   assets/config.js          public Supabase URL + anon key (sync <head>, before features.js)
   assets/features.js        sync <head>: feature switches + timed release (server + fallback)
-  assets/site.js            theme toggle, schedule "now", ?pass= capture
+  assets/site.js            crest triple-tap (night colors), schedule "now", ?pass= capture, Wi-Fi
   assets/songs-client.js    data layer (songs, DJ, camera, organizer): live Supabase or demo
   assets/songs.js, dj.js    the two song pages
   assets/camera.js          capture, resize, IndexedDB queue, retries
   assets/photos.js          the gallery
-  assets/photo-tools.js     save photos: share sheet on phones (up to 10), else .jpg / .zip (built here)
+  assets/photo-tools.js     save photos: share sheet on phones (up to 10), else .jpg / .zip (built here); 2048px copies
   assets/admin.js           the organizer screen
   assets/wallet.js          /p/: on-screen boarding pass + device-aware Wallet button
 supabase/
-  config.toml               functions + the photos bucket (deployed by the integration)
+  config.toml               functions + the photos, wallet and album buckets (deployed by the integration)
   migrations/               schema + rules (the API is these functions)
   functions/songs/          Spotify search + submit (Deno)
-  functions/camera/         reserve -> signed upload URL; gallery signed URLs; organizer photo list
+  functions/camera/         reserve -> signed upload URL; gallery signed URLs; organizer photo list; album uploads
   functions/wallet/         GET ?t=<token> -> the guest's .pkpass (verify_jwt off)
 scripts/import_passes.py    guest workbook -> tokens, passes.sql, passes.json, print merge + QR URLs
 scripts/make_wallet_passes.py  passes.json + .p12 -> one signed .pkpass per guest (--upload)
 scripts/requirements.txt    cryptography, Pillow, openpyxl
-scripts/load_test.mjs       N phones polling the song board (read-only), latency + errors
+scripts/load_test.mjs       load test: N phones on the board (read-only), or --night (full guest mix on test passes)
 tests/test_wallet_passes.py signs test passes with a throwaway certificate, verifies with openssl
 tests/sql/run.sh            migrations + SQL tests on a throwaway local Postgres
 docs/songs.md               song rules, Spotify app setup, DJ questions, decisions
@@ -144,8 +144,11 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
 - `assets/ds/` files are copied unchanged from the design system. Don't edit
   them; re-copy when the system changes. Layout goes in the per-area CSS files
   using only tokens (`var(--…)`).
-- Themes: `data-theme="terrace"` (day, default) or `"finery"` (night). Finery
-  when the device prefers dark or from 5:00 PM on the day; the toggle wins.
+- Themes: `data-theme="terrace"` (day) always, whatever the device prefers
+  or the time (changed Nov 7; the design system's "Finery after dark" rule is
+  set aside). `"finery"` (night) is hidden: three quick taps on the home
+  page's crest switch to it and back, remembered on the phone. The header
+  toggle stays in the markup, `hidden`; `site.js` no longer shows it.
 - Text is cobalt (`--text`); no grey body text. `--brand` is the only
   interactive color; one primary button per view.
 - Adora Bouton (script) is display only: page titles, names, date lines. Never
@@ -167,8 +170,12 @@ The event is on a fast-approaching date. Each phase ends with something usable.
 The roadmap drawing is in the Event Webapp Plan doc.
 
 ### 1. Foundations ✅ (Nov 4)
-Static Home, Schedule (timeline + room map), Details; day/night themes;
+Static Home, Schedule (timeline + room map), Details; day colors (night by
+three taps on the crest);
 rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
+- ✅ Home: Wi-Fi card (Linden Club Guest / 24Welcome in plain text; **Join
+  Wi-Fi** copies the password, since a page can't join a network; a WIFI: QR
+  for another phone to scan).
 - ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
   items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
   7:00, grand entrance 7:15 … last call 10:15, good night and the party bus
@@ -257,6 +264,11 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
   up to 10, so they land in the camera roll), or Save all (.zip files).
 - Organizer export: `/admin/` → Download all, or see supabase/README.md.
+- ✅ Photo album (`/admin/` → Photo album): photos from other cameras, uploaded
+  with an optional credit; the original (JPEG/PNG/WebP, 40 MB) plus a 2048px
+  copy made in the browser go to the private `album` bucket. Guests see them
+  on `/photos/` after the reveal under "More from the night"; Select / Save
+  give them the originals. Hide or delete from `/admin/`.
 - ✅ Shots by guest (`/admin/` → Camera): each pass's count; **Reset shots**
   for one guest or everyone gives the full count back and keeps their photos
   (`passes.shots_reset_at`; earlier shots stop counting).
@@ -281,7 +293,10 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   the gallery. Clean slate for the night: delete test passes (rows and photo
   files, via the `camera` function's organizer-only `purge`) and clear the
   song board (type CLEAR).
-- ✅ `scripts/load_test.mjs`: ~105 read-only phones polling the board.
+- ✅ `scripts/load_test.mjs`: ~105 read-only phones polling the board; `--night`
+  runs the full guest mix (sign-in, pass, board, Spotify search, requests,
+  votes, 600 KB photo uploads) on test passes, `--cleanup` after. Delete test
+  passes also removes their song requests and votes.
 - ✅ `docs/runbook.md`: phone checklist (iPhone Safari + Android Chrome, dim
   room, airplane mode, page closed mid-upload, screen lock, Wallet), load
   test, venue walk-through, the day before, the night's "if… then…", after.

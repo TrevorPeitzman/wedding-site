@@ -1,5 +1,5 @@
 /* Progressive enhancement only: every page reads fine without this file.
- *  - wires the Day / Night toggle in the header
+ *  - three quick taps on the crest switch day / night colors (no visible toggle)
  *  - on the schedule, marks past and current items and lights up the
  *    current room on the map while the evening is under way
  */
@@ -22,25 +22,23 @@
     }
   } catch (e) {}
 
-  /* ---------- Theme toggle ---------- */
-  var toggle = document.querySelector('.theme-toggle');
-  function paintToggle() {
-    if (!toggle) return;
-    var night = root.getAttribute('data-theme') === 'finery';
-    toggle.setAttribute('aria-pressed', String(night));
-    var word = toggle.querySelector('.theme-word');
-    if (word) word.textContent = night ? 'Day' : 'Night';
-    toggle.setAttribute('aria-label', night ? 'Switch to day colors' : 'Switch to night colors');
-  }
-  if (toggle) {
-    toggle.hidden = false;
-    toggle.addEventListener('click', function () {
+  /* ---------- Theme: three quick taps on the crest ---------- */
+  // Day colors always; the header toggle stays hidden. Tapping the home
+  // page's crest three times within a second switches to night colors and
+  // back, remembered on this phone. pointerup, not click: iOS doesn't send
+  // clicks to plain images.
+  var taps = [];
+  Array.prototype.forEach.call(document.querySelectorAll('.kt-crest'), function (crest) {
+    crest.addEventListener('pointerup', function () {
+      var now = Date.now();
+      taps = taps.filter(function (t) { return now - t < 1000; });
+      taps.push(now);
+      if (taps.length < 3) return;
+      taps = [];
       var next = root.getAttribute('data-theme') === 'finery' ? 'terrace' : 'finery';
       if (KT.setTheme) KT.setTheme(next, true); else root.setAttribute('data-theme', next);
-      paintToggle();
     });
-    paintToggle();
-  }
+  });
 
   /* ---------- Schedule: past / now ---------- */
   var items = Array.prototype.slice.call(document.querySelectorAll('.kt-tl-item[data-start]'));
@@ -102,4 +100,25 @@
       if (on && map.scrollIntoView) map.querySelector('svg').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   }
+})();
+
+
+/* Home: Wi-Fi. A web page can't join a network for the guest, so "Join
+ * Wi-Fi" copies the password and says where to paste it. */
+(function () {
+  'use strict';
+  var btn = document.getElementById('wifi-join'), how = document.getElementById('wifi-how');
+  if (!btn || !how) return;
+  btn.hidden = false;
+  btn.addEventListener('click', function () {
+    var done = function () {
+      how.textContent = 'Password copied. Now open Settings, then Wi-Fi, choose Linden Club Guest and paste it.';
+      btn.textContent = 'Copied';
+    };
+    var fail = function () {
+      how.textContent = 'Open Settings, then Wi-Fi, choose Linden Club Guest and type the password: 24Welcome.';
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('24Welcome').then(done, fail);
+    else fail();
+  });
 })();

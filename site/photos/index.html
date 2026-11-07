@@ -67,7 +67,15 @@
         </div>
       </div>
       <div class="gal-msg" id="save-message" aria-live="polite"></div>
-      <ul class="gal-grid" id="grid" aria-label="Everyone’s photos" hidden></ul>
+      <section class="stack" id="camera-section" aria-labelledby="camera-title" hidden>
+        <h2 class="section-title" id="camera-title" hidden>From the disposable camera</h2>
+        <ul class="gal-grid" id="grid" aria-label="Everyone’s photos"></ul>
+      </section>
+      <section class="stack" id="album-section" aria-labelledby="album-title" hidden>
+        <h2 class="section-title" id="album-title">More from the night</h2>
+        <p class="kt-hint" id="album-credit" hidden></p>
+        <ul class="gal-grid" id="album-grid" aria-labelledby="album-title"></ul>
+      </section>
       <div class="gal-bar" id="bar" hidden>
         <p class="kt-hint" id="bar-note" aria-live="polite">Tap photos to choose them.</p>
         <div class="gal-tool-btns">

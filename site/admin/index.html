@@ -154,6 +154,31 @@
         </div>
       </section>
 
+      <section class="kt-card" aria-labelledby="album-title">
+        <p class="kt-card-eyebrow">From other cameras</p>
+        <h2 class="kt-card-title" id="album-title">Photo album</h2>
+        <div class="kt-card-body stack">
+          <p>Add photos from a photographer or friends. Guests see them on the photos page with everyone’s shots once the photos come out, and can save the full-size files.</p>
+          <form class="stack" id="album-form">
+            <div class="kt-field">
+              <label class="kt-label" for="album-files">Photos <span class="kt-opt">(JPEG, PNG or WebP, up to 40 MB each)</span></label>
+              <input class="kt-input" id="album-files" type="file" accept="image/jpeg,image/png,image/webp" multiple required>
+            </div>
+            <div class="kt-field">
+              <label class="kt-label" for="album-credit">Credit <span class="kt-opt">(optional, shown to guests)</span></label>
+              <input class="kt-input" id="album-credit" maxlength="120" autocomplete="off" placeholder="Photos by …">
+            </div>
+            <div><button class="kt-btn kt-btn-secondary" type="submit" id="album-upload">Upload</button></div>
+            <p class="kt-hint" id="album-progress" aria-live="polite" hidden></p>
+          </form>
+          <div class="adm-row">
+            <p class="kt-hint" id="album-count"></p>
+            <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="album-load">Show album</button>
+          </div>
+          <ul class="adm-photos" id="album" aria-label="Photo album" hidden></ul>
+        </div>
+      </section>
+
       <section class="kt-card" aria-labelledby="rehearsal-title">
         <p class="kt-card-eyebrow">Before the night</p>
         <h2 class="kt-card-title" id="rehearsal-title">Rehearsal</h2>
