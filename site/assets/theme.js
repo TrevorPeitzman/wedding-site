@@ -1,9 +1,9 @@
 /* Loaded synchronously in <head> so the right theme paints first.
  *
- * Theme rule (from the design system README): Terrace (day) by default;
- * Finery (night) when the device prefers dark, and from the ceremony on,
- * because every guest screen at the venue is opened in the dark.
- * A guest's own choice from the header toggle wins and is remembered.
+ * Theme rule: Terrace (day) always, whatever the device prefers or the time.
+ * Finery (night) is a hidden extra: three quick taps on the crest on the
+ * home page switch to it and back (site.js), remembered on the phone. (The
+ * design system's own rule, Finery after dark, was set aside on Nov 7.)
  *
  * KT.now() is the page clock. Add ?now=2026-11-21T18:10 (Pacific time) to
  * any page to rehearse how it looks at that moment on the night.
@@ -22,16 +22,10 @@
 
   KT.now = function () { return override ? new Date(override) : new Date(); };
 
-  // 5:00 PM PST on Saturday 21 November 2026 = 01:00 UTC on the 22nd.
-  KT.CEREMONY = Date.UTC(2026, 10, 22, 1, 0);
-
   KT.storedTheme = function () {
     try { return localStorage.getItem(KEY); } catch (e) { return null; }
   };
-  KT.autoTheme = function () {
-    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return dark || KT.now().getTime() >= KT.CEREMONY ? 'finery' : 'terrace';
-  };
+  KT.autoTheme = function () { return 'terrace'; };
   KT.setTheme = function (theme, remember) {
     document.documentElement.setAttribute('data-theme', theme);
     if (remember) { try { localStorage.setItem(KEY, theme); } catch (e) {} }

@@ -49,7 +49,7 @@ site/                       static pages (no build step)
   assets/theme.js           sync <head>: Terrace/Finery, KT.now() rehearsal clock
   assets/config.js          public Supabase URL + anon key (sync <head>, before features.js)
   assets/features.js        sync <head>: feature switches + timed release (server + fallback)
-  assets/site.js            theme toggle, schedule "now", ?pass= capture
+  assets/site.js            crest triple-tap (night colors), schedule "now", ?pass= capture, Wi-Fi
   assets/songs-client.js    data layer (songs, DJ, camera, organizer): live Supabase or demo
   assets/songs.js, dj.js    the two song pages
   assets/camera.js          capture, resize, IndexedDB queue, retries
@@ -144,8 +144,11 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
 - `assets/ds/` files are copied unchanged from the design system. Don't edit
   them; re-copy when the system changes. Layout goes in the per-area CSS files
   using only tokens (`var(--…)`).
-- Themes: `data-theme="terrace"` (day, default) or `"finery"` (night). Finery
-  when the device prefers dark or from 5:00 PM on the day; the toggle wins.
+- Themes: `data-theme="terrace"` (day) always, whatever the device prefers
+  or the time (changed Nov 7; the design system's "Finery after dark" rule is
+  set aside). `"finery"` (night) is hidden: three quick taps on the home
+  page's crest switch to it and back, remembered on the phone. The header
+  toggle stays in the markup, `hidden`; `site.js` no longer shows it.
 - Text is cobalt (`--text`); no grey body text. `--brand` is the only
   interactive color; one primary button per view.
 - Adora Bouton (script) is display only: page titles, names, date lines. Never
@@ -167,7 +170,8 @@ The event is on a fast-approaching date. Each phase ends with something usable.
 The roadmap drawing is in the Event Webapp Plan doc.
 
 ### 1. Foundations ✅ (Nov 4)
-Static Home, Schedule (timeline + room map), Details; day/night themes;
+Static Home, Schedule (timeline + room map), Details; day colors (night by
+three taps on the crest);
 rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
 - ✅ Home: Wi-Fi card (Linden Club Guest / 24Welcome in plain text; **Join
   Wi-Fi** copies the password, since a page can't join a network; a WIFI: QR

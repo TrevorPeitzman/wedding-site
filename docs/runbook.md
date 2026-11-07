@@ -47,7 +47,8 @@ in a dim room on the venue's wifi and again on cellular.
       name; its title opens Spotify; vote on another; the cooldown message
       appears on a second vote.
 - [ ] DJ view on the DJ's own device: the request appears; mark it Played.
-- [ ] Night theme: from 5:00 PM (`?now=2026-11-21T17:10`) pages are dark.
+- [ ] Day colors everywhere, even on a phone set to dark mode; three quick taps
+      on the home page's crest switch to night colors and back.
 - [ ] Every timed release you set, with `?now=` just before and just after.
 
 ### 3. Load test

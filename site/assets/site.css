@@ -6,6 +6,11 @@
 *, *::before, *::after { box-sizing: border-box; }
 /* The design system gives cards, fields and notices display:grid, which would
    otherwise beat the hidden attribute. */
+/* Native controls (checkboxes, file pickers, scrollbars) follow the theme,
+   not the device's dark setting. */
+:root[data-theme="terrace"] { color-scheme: light; }
+:root[data-theme="finery"] { color-scheme: dark; }
+
 [hidden] { display: none !important; }
 
 /* Feature switches and timed release (assets/features.js sets these classes
@@ -92,6 +97,8 @@ p { margin: 0; }
 /* ---------- Home hero ---------- */
 .hero { display: grid; justify-items: center; gap: var(--space-5); text-align: center; }
 .hero .kt-crest { width: 180px; }
+/* Three quick taps switch themes (site.js): no double-tap zoom, no image menu. */
+.kt-crest { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .hero-meta { display: grid; gap: var(--space-1); font-size: 16px; }
 .hero-meta .kt-caps { font-size: 12px; letter-spacing: .2em; color: var(--text-muted); }
 .crest-ivory { display: none; }
