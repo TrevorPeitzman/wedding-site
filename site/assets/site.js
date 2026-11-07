@@ -116,6 +116,32 @@
   update();
   setInterval(update, 60 * 1000);
 
+  // Tables on the map. /schedule/?table=5 (the Table and Gate on a guest's
+  // pass link here) picks one; otherwise the phone's own table (kept by the
+  // pass page) is shown; tapping a table names it.
+  var tables = document.querySelectorAll('.plan-table'), tableNote = document.getElementById('table-note');
+  if (tables.length) {
+    var TABLE_NAMES = { 1: 'Honolulu', 2: 'Australia', 3: 'Rome', 4: 'Annapolis', 5: 'Santorini', 6: 'Austin', 7: 'Kauai',
+      8: 'Montenegro', 9: 'Washington DC', 10: 'Croatia', 11: 'Corfu', 12: 'Bulgaria', 13: 'Budapest', 14: 'Venice' };
+    var mine = null;
+    try { mine = localStorage.getItem('kt-table'); } catch (e) {}
+    var pickTable = function (n) {
+      n = String(n);
+      Array.prototype.forEach.call(tables, function (t) { t.classList.toggle('is-picked', t.getAttribute('data-table') === n); });
+      if (!tableNote) return;
+      tableNote.hidden = !TABLE_NAMES[n];
+      tableNote.textContent = (n === mine ? 'Your table: ' : 'Table ') + n + ' · ' + TABLE_NAMES[n] +
+        ' · Gate P' + ('0' + n).slice(-2) + ', in the Uptown Ballroom';
+    };
+    var asked = null;
+    try { asked = new URLSearchParams(location.search).get('table'); } catch (e) {}
+    if (asked && TABLE_NAMES[asked]) pickTable(asked);
+    else if (mine && TABLE_NAMES[mine]) pickTable(mine);
+    Array.prototype.forEach.call(tables, function (t) {
+      t.addEventListener('click', function () { pickTable(t.getAttribute('data-table')); });
+    });
+  }
+
   // "Show restrooms": they're tucked away, so the map can point them out.
   var wcBtn = document.getElementById('show-wc'), map = document.querySelector('.kt-map');
   if (wcBtn && map) {

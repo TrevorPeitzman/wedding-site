@@ -49,9 +49,10 @@
     <section class="stack" aria-labelledby="rooms">
       <h2 class="section-title center" id="rooms">Finding your way</h2>
       <p class="center"><button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" id="show-wc" aria-pressed="false" aria-controls="floor-plan" hidden>Show restrooms</button></p>
+      <p class="center table-note" id="table-note" aria-live="polite" hidden></p>
       <figure class="kt-map" id="floor-plan" style="margin:0">
-        <svg viewBox="128 74 921 998" role="img" aria-label="Map of the event rooms at The Linden Club">
-<rect class="plan-bg" x="128" y="74" width="921" height="998" rx="18"/>
+        <svg viewBox="128 40 921 1032" role="img" aria-label="Map of the event rooms at The Linden Club">
+<rect class="plan-bg" x="128" y="40" width="921" height="1032" rx="18"/>
 <polygon class="plan-room" data-room="ballroom" points="405,113 842,113 842,456 352,456 352,300 405,300"/>
 <polygon class="plan-room" data-room="finery" points="149,114 346,114 346,456 149,456"/>
 <polygon class="plan-room" data-room="finery" points="198,465 350,465 350,656 198,656"/>
@@ -69,7 +70,7 @@
 <path class="wc-lead" d="M454,1026L454,999"/>
 <text class="wc-lbl" x="454" y="1046" style="text-anchor:middle">Family</text>
 </g>
-<g data-room="ballroom"><text x="624" y="290" class="lbl"><tspan x="624" dy="0.35em"></tspan><tspan x="624" dy="0">Uptown Ballroom</tspan></text></g>
+<g data-room="ballroom"><text x="624" y="78" class="lbl"><tspan x="624" dy="0.35em"></tspan><tspan x="624" dy="0">Uptown Ballroom</tspan></text></g>
 <g data-room="finery"><text x="232" y="200" class="lbl"><tspan x="232" dy="-0.20em"></tspan><tspan x="232" dy="0">Finery</tspan><tspan x="232" dy="1.1em">Bar</tspan></text></g>
 <g data-room="finery"><text x="274" y="560" class="lbl"><tspan x="274" dy="-0.20em"></tspan><tspan x="274" dy="0">Finery</tspan><tspan x="274" dy="1.1em">Lounge</tspan></text></g>
 <g data-room="terrace"><text x="662" y="795" class="lbl"><tspan x="662" dy="0.35em"></tspan><tspan x="662" dy="0">Terrace Room</tspan></text></g>
@@ -80,9 +81,25 @@
 <text x="851" y="872" class="lbl lbl-minor" transform="rotate(-90 851 872)"><tspan x="851" dy="0.35em"></tspan><tspan x="851" dy="0">Card Room</tspan></text>
 <text x="592" y="937" class="lbl lbl-minor"><tspan x="592" dy="-0.20em"></tspan><tspan x="592" dy="0">Terrace</tspan><tspan x="592" dy="1.1em">Bar</tspan></text>
 <text x="662" y="1052" class="lbl lbl-minor"><tspan x="662" dy="0.35em"></tspan><tspan x="662" dy="0">The Deck</tspan></text>
+<g class="plan-tables">
+<g class="plan-table" data-table="1"><title>Table 1 · Honolulu</title><circle cx="730" cy="189" r="21"/><text x="730" y="196">1</text></g>
+<g class="plan-table" data-table="2"><title>Table 2 · Australia</title><circle cx="727" cy="364" r="21"/><text x="727" y="371">2</text></g>
+<g class="plan-table" data-table="3"><title>Table 3 · Rome</title><circle cx="686" cy="144" r="21"/><text x="686" y="151">3</text></g>
+<g class="plan-table" data-table="4"><title>Table 4 · Annapolis</title><circle cx="704" cy="418" r="21"/><text x="704" y="425">4</text></g>
+<g class="plan-table" data-table="5"><title>Table 5 · Santorini</title><circle cx="658" cy="373" r="21"/><text x="658" y="380">5</text></g>
+<g class="plan-table" data-table="6"><title>Table 6 · Austin</title><circle cx="625" cy="313" r="21"/><text x="625" y="320">6</text></g>
+<g class="plan-table" data-table="7"><title>Table 7 · Kauai</title><circle cx="627" cy="243" r="21"/><text x="627" y="250">7</text></g>
+<g class="plan-table" data-table="8"><title>Table 8 · Montenegro</title><circle cx="636" cy="181" r="21"/><text x="636" y="188">8</text></g>
+<g class="plan-table" data-table="9"><title>Table 9 · Washington DC</title><circle cx="580" cy="153" r="21"/><text x="580" y="160">9</text></g>
+<g class="plan-table" data-table="10"><title>Table 10 · Croatia</title><circle cx="564" cy="215" r="21"/><text x="564" y="222">10</text></g>
+<g class="plan-table" data-table="11"><title>Table 11 · Corfu</title><circle cx="562" cy="298" r="21"/><text x="562" y="305">11</text></g>
+<g class="plan-table" data-table="12"><title>Table 12 · Bulgaria</title><circle cx="588" cy="373" r="21"/><text x="588" y="380">12</text></g>
+<g class="plan-table" data-table="13"><title>Table 13 · Budapest</title><circle cx="524" cy="354" r="21"/><text x="524" y="361">13</text></g>
+<g class="plan-table" data-table="14"><title>Table 14 · Venice</title><circle cx="515" cy="263" r="21"/><text x="515" y="270">14</text></g>
+</g>
 <g class="step"><circle cx="548" cy="742" r="20"/><text x="548" y="750" text-anchor="middle">1</text></g>
 <g class="step"><circle cx="228" cy="492" r="20"/><text x="228" y="500" text-anchor="middle">2</text></g>
-<g class="step"><circle cx="500" cy="150" r="20"/><text x="500" y="158" text-anchor="middle">3</text></g>
+<g class="step"><circle cx="444" cy="70" r="20"/><text x="444" y="78" text-anchor="middle">3</text></g>
 </svg>
         <ul class="kt-map-key">
           <li><b>1 · 5:30 PM</b> Ceremony · Terrace Room</li>

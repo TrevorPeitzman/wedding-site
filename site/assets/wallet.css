@@ -4,3 +4,6 @@
 .wal-area .kt-pass { margin: 0 auto; }
 .wal-stub { grid-template-columns: 1fr; }
 .wal-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
+
+/* Gate and Table on the pass link to the map. */
+.wal-map-link { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }

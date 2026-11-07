@@ -182,3 +182,11 @@ p { margin: 0; }
 .wifi-qr-code { width: min(220px, 70vw); height: auto; display: block; margin: 0 auto; border-radius: var(--radius-sm); }
 .wifi-qr-code .qr-ground { fill: var(--qr-ground); }
 .wifi-qr-code .qr-ink { stroke: var(--qr-ink); fill: none; }
+
+/* Tables on the floor plan (from the venue's layout); the picked one is filled. */
+.kt-map .plan-table { cursor: pointer; }
+.kt-map .plan-table circle { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
+.kt-map svg .plan-table text { font-size: 21px; font-weight: 700; fill: var(--text); stroke: none; }
+.kt-map .plan-table.is-picked circle { fill: var(--brand); stroke: var(--brass); stroke-width: 5; }
+.kt-map svg .plan-table.is-picked text { fill: var(--on-brand); }
+.table-note { margin: 0; font-weight: 700; }
