@@ -25,9 +25,13 @@
   // The design system's BoardingPass, as markup (components.css styles it).
   function passHtml(c) {
     var name = c.pass_name || ((c.last_name || '') + '/' + (c.first_name || '')).toUpperCase();
-    var cell = function (label, value, big) {
-      return '<div' + (big ? ' class="kt-pass-big"' : '') + '><dt>' + label + '</dt><dd>' + esc(value || '—') + '</dd></div>';
+    var cell = function (label, value, big, href) {
+      var v = esc(value || '—');
+      if (href && value) v = '<a class="wal-map-link" href="' + href + '">' + v + '</a>';
+      return '<div' + (big ? ' class="kt-pass-big"' : '') + '><dt>' + label + '</dt><dd>' + v + '</dd></div>';
     };
+    // Gate and Table open the map with this table picked.
+    var where = c.table_number ? '/schedule/?table=' + encodeURIComponent(c.table_number) + '#floor-plan' : null;
     return '<article class="kt-pass" aria-label="Boarding pass for ' + esc(c.first_name + ' ' + c.last_name) + '">' +
       '<div class="kt-pass-band"><span class="kt-pass-carrier">K &amp; T Airways</span><span class="kt-pass-flight">KT 1121</span></div>' +
       '<div class="kt-pass-main">' +
@@ -38,7 +42,7 @@
           '<div><div class="kt-pass-code">' + esc(c.destination_code) + '</div><div class="kt-pass-city">' + esc(c.destination_city) + '</div></div>' +
         '</div>' +
         '<dl class="kt-pass-grid">' +
-          cell('Gate', c.gate, true) + cell('Table', c.table_number, true) + cell('Boarding', '7:00P', true) +
+          cell('Gate', c.gate, true, where) + cell('Table', c.table_number, true, where) + cell('Boarding', '7:00P', true) +
           cell('Date', '21NOV26') + cell('Class', c.cabin === 'F' ? 'First' : c.cabin) + cell('Seat', c.seat) +
         '</dl>' +
       '</div>' +
@@ -72,6 +76,7 @@
 
   api.wallet.card().then(function (c) {
     if (!c || !c.has_pass) return;
+    try { if (c.table_number) localStorage.setItem('kt-table', String(c.table_number)); } catch (e) {}
     $('pass-card').innerHTML = passHtml(c);
     var b = buttons(c);
     $('wallet-actions').innerHTML = b.html;

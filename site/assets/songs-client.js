@@ -104,6 +104,8 @@
       },
       admin: {
         board: function (key) { return rpc('admin_board', { p_key: key }); },
+        // Looks up BPM and genre for requested tracks that don't have them yet.
+        details: function (key) { return fn({ action: 'details', key: key }); },
         setStatus: function (key, id, status) {
           return rpc('admin_set_status', { p_key: key, p_request_id: id, p_status: status });
         },
@@ -378,7 +380,11 @@
       return s.requests.filter(function (r) { return includeHidden || r.status !== 'hidden'; })
         .map(function (r) {
           return { id: r.id, status: r.status, spotify_id: r.spotify_id, title: r.title, artist: r.artist,
-                   album: r.album, artwork_url: r.artwork_url, duration_ms: r.duration_ms,
+                   album: r.album, artwork_url: r.artwork_url,
+                   // Demo song details: made up, so the DJ view can show them.
+                   duration_ms: r.duration_ms || (150 + (r.id * 37) % 120) * 1000,
+                   bpm: r.spotify_id ? 90 + (r.id * 23) % 50 : null,
+                   genre: r.spotify_id ? ['Pop', 'Dance', 'R&B', 'Rock', 'Disco'][r.id % 5] : null,
                    requester_name: r.requester_name, played_at: r.played_at, created_at: r.created_at,
                    votes: r.voters.length, voted: r.voters.indexOf(ME) >= 0 };
         })
@@ -468,6 +474,7 @@
         return finish(p, { action: 'voted', request_id: id });
       },
       admin: {
+        details: function () { return later({ ok: true, filled: 0 }); },
         board: function (key) {
           return admin(key, function (s) {
             return { event: Object.assign({ name: 'Katarina & Trevor' }, s.event), requests: ranked(s, true), rules: s.rules };
@@ -704,7 +711,7 @@
     var down = function () { return Promise.reject(refusal('unavailable', 'We couldn’t connect. Check your signal and reload the page.')); };
     return (client = { mode: 'offline', init: function () { return Promise.resolve(); }, board: down, search: down,
       request: down, vote: down,
-      admin: { board: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
+      admin: { board: down, details: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
                features: down, setFeature: down, setCamera: down, rehearsal: down, makeTestPasses: down,
                resetTestPass: down, deleteTestPasses: down, clearSongs: down, photos: down, hidePhoto: down,
                shots: down, resetShots: down, albumList: down, albumUpload: down, albumHide: down, albumDelete: down },

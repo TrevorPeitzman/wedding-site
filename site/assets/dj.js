@@ -57,6 +57,18 @@
     return '<a class="song-link" href="https://open.spotify.com/track/' + id + '" target="_blank" rel="noopener">' +
       esc(r.title) + '<span class="visually-hidden"> (opens in Spotify)</span></a>';
   }
+  // "3:45 · 128 BPM · Pop": whatever is known (manual entries have none).
+  function facts(r) {
+    var out = [];
+    if (r.duration_ms) {
+      var sec = Math.round(r.duration_ms / 1000);
+      out.push(Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2));
+    }
+    if (r.bpm) out.push(Math.round(r.bpm) + ' BPM');
+    if (r.genre) out.push(r.genre);
+    return out.length ? '<p class="song-by dj-facts">' + esc(out.join(' · ')) + '</p>' : '';
+  }
+
   function row(r, i, done) {
     var votes = r.votes + (r.votes === 1 ? ' vote' : ' votes');
     var buttons = done
@@ -68,7 +80,7 @@
     return '<li class="song-row dj-row' + (done ? ' is-played' : '') + '">' +
       '<span class="song-rank" aria-hidden="true">' + (done ? '' : i + 1) + '</span>' +
       '<div class="song-meta"><p class="song-title">' + titleHtml(r) + '</p>' +
-      '<p class="song-artist">' + esc(r.artist) + '</p>' +
+      '<p class="song-artist">' + esc(r.artist) + '</p>' + facts(r) +
       (r.requester_name ? '<p class="song-by">Asked for by ' + esc(r.requester_name) + '</p>' : '') +
       (done ? '<p class="song-by">' + (r.status === 'played' ? 'Played' : 'Hidden') + '</p>' : '') + '</div>' +
       '<span class="dj-votes">' + esc(votes) + '</span>' +
@@ -99,10 +111,21 @@
     $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
   }
 
+  // BPM and genre arrive from the server's lookups; ask for any missing at
+  // most once a minute, and redraw when some came in.
+  var lastAsk = 0;
+  function askForDetails() {
+    var missing = (data.requests || []).some(function (r) { return r.spotify_id && r.bpm == null && r.genre == null; });
+    if (!missing || !api.admin.details || Date.now() - lastAsk < 60000) return;
+    lastAsk = Date.now();
+    api.admin.details(key).then(function (r) { if (r && r.filled) load(); }, function () {});
+  }
+
   function load() {
     if (!key) { showKeyForm(); return Promise.resolve(); }
     return api.admin.board(key).then(function (d) {
       data = d; $('key-form').hidden = true; $('dj').hidden = false; render();
+      askForDetails();
     }).catch(function (err) {
       if (err.code === 'not_admin') {
         key = null; try { localStorage.removeItem(STORE); } catch (e) {}
