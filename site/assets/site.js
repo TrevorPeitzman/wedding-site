@@ -16,11 +16,39 @@
     var pass = params.get('pass');
     if (pass && /^[A-Za-z0-9_-]{6,128}$/.test(pass)) {
       localStorage.setItem('kt-pass', pass);
+      localStorage.setItem('kt-has-pass', '1');
       params.delete('pass');
       var rest = params.toString();
       history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
     }
   } catch (e) {}
+
+  /* ---------- "My pass" in the header ----------
+   * Once this phone has a boarding pass (scanned, or confirmed by the
+   * server), the guest header gets a link back to it. songs-client.js calls
+   * KT.setHasPass() whenever the server says yes or no. Guest pages only:
+   * their nav starts with Home. */
+  function passLink() {
+    var on = false;
+    try { on = localStorage.getItem('kt-has-pass') === '1'; } catch (e) {}
+    var list = document.querySelector('.site-nav ul'), item = document.getElementById('nav-pass');
+    var home = list && list.querySelector('a[href="/"]');
+    if (!list || !home || !/home/i.test(home.textContent)) return;
+    if (on && !item) {
+      item = document.createElement('li');
+      item.id = 'nav-pass';
+      item.innerHTML = '<a href="/p/">My pass</a>';
+      if (location.pathname === '/p/') item.firstChild.setAttribute('aria-current', 'page');
+      list.appendChild(item);
+    } else if (!on && item) item.remove();
+    list.classList.toggle('has-pass', on);
+  }
+  KT.setHasPass = function (yes) {
+    try { if (yes) localStorage.setItem('kt-has-pass', '1'); else localStorage.removeItem('kt-has-pass'); } catch (e) {}
+    passLink();
+  };
+  window.KT = KT;
+  passLink();
 
   /* ---------- Theme: three quick taps on the crest ---------- */
   // Day colors always; the header toggle stays hidden. Tapping the home

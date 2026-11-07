@@ -48,6 +48,9 @@ img { max-width: 100%; height: auto; }
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
   min-height: 56px;
 }
+/* The header toggle is hidden, so the nav can take the whole row (room for
+   "My pass" once this phone has one). */
+.site-nav { flex: 1 1 auto; min-width: 0; }
 .site-nav ul {
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-wrap: wrap; gap: 0 var(--space-4);
@@ -74,6 +77,15 @@ img { max-width: 100%; height: auto; }
 @media (max-width: 374px) {
   .site-nav ul { gap: 0 var(--space-2); }
   .site-nav a { letter-spacing: .06em; font-size: 11px; }
+}
+/* Five items once "My pass" joins: a touch tighter on phones, one line. */
+@media (max-width: 420px) {
+  .site-nav ul.has-pass { gap: 0 10px; }
+  .site-nav ul.has-pass a { font-size: 11px; letter-spacing: .08em; }
+}
+@media (max-width: 374px) {
+  .site-nav ul.has-pass { gap: 0 6px; }
+  .site-nav ul.has-pass a { font-size: 10.5px; letter-spacing: .03em; }
 }
 
 /* ---------- Page ---------- */
