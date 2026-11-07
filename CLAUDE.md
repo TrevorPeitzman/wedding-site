@@ -188,6 +188,13 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   anyway (guests first see the site at the venue). Without JS, Details shows.
 - ✅ Schedule page leads with the map ("Finding your way", the 1-2-3 key and
   **Show restrooms**), then the timeline.
+- ✅ Tables 1–14 on the map: placed and numbered from the venue's final layout
+  (the venue is the source of truth), fitted onto the traced plan; names from
+  the guest workbook (13 is Budapest there, Bulgaria in Zola's chart). The
+  Gate and Table on `/p/` link to `/schedule/?table=N#floor-plan`, which picks
+  that table; the pass page also keeps `kt-table`, so the schedule shows "Your
+  table" on later visits; tapping a table names it. "Uptown Ballroom" sits
+  above the top wall, with step 3, to leave the floor to the tables.
 - ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
   items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
   7:00, grand entrance 7:15 … last call 10:15, good night and the party bus
@@ -209,6 +216,12 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   on purpose; see the comment there).
 - ✅ Pages live at wedding.peitzman.net (TLS provisioning on Nov 4).
 - ☐ DJ walkthrough (questions in `docs/songs.md`).
+- ✅ DJ view shows each request's length · BPM · genre. Length comes from
+  Spotify; Spotify no longer gives new apps BPM, so the `songs` function looks
+  up the track's ISRC on Deezer's public API (bpm, album genre), falling back
+  to Spotify's artist genres; after each request in the background, and
+  when the DJ view loads (action `details`, DJ key). Missing values stay
+  blank; manual entries have none. `tracks.isrc/bpm/genre/details_checked_at`.
 - Easter egg: requesting "Hotel Room Service" by Pitbull opens a note
   (`#egg` in `songs/index.html`, `easterEgg()` in `songs.js`).
 
