@@ -84,8 +84,10 @@
         if (!pass) return Promise.resolve();
         return ensureSession()
           .then(function () { return rpc('claim_pass', { p_token: pass }); })
-          .then(function () { forgetPass(); })
-          .catch(function (err) { if (err.code === 'unknown_pass') forgetPass(); });
+          .then(function () { forgetPass(); if (KT.setHasPass) KT.setHasPass(true); })
+          .catch(function (err) {
+            if (err.code === 'unknown_pass') { forgetPass(); if (KT.setHasPass) KT.setHasPass(false); }
+          });
       },
       board: function () { return rpc('song_board'); },
       search: function (q) { return fn({ action: 'search', q: q }); },
@@ -672,6 +674,16 @@
   }
 
   var client = null;
+  // Whenever the server says whether this phone has a pass, tell site.js,
+  // which shows "My pass" in the header from then on (or takes it away).
+  function remembersPass(api) {
+    var note = function (r) { if (r && 'has_pass' in r && KT.setHasPass) KT.setHasPass(!!r.has_pass); return r; };
+    var card = api.wallet.card, status = api.camera.status;
+    api.wallet.card = function () { return card.apply(this, arguments).then(note); };
+    api.camera.status = function () { return status.apply(this, arguments).then(note); };
+    return api;
+  }
+
   KT.songsClient = function () {
     if (client) return client;
     var cfg = window.KT_CONFIG || {};
@@ -684,8 +696,8 @@
       if (flag === '0') sessionStorage.removeItem('kt-demo');
       demo = sessionStorage.getItem('kt-demo') === '1';
     } catch (e) {}
-    if (demo || !(cfg.supabaseUrl && cfg.supabaseAnonKey)) return (client = demoClient());
-    if (window.supabase) return (client = liveClient(cfg));
+    if (demo || !(cfg.supabaseUrl && cfg.supabaseAnonKey)) return (client = remembersPass(demoClient()));
+    if (window.supabase) return (client = remembersPass(liveClient(cfg)));
     // Configured, but the Supabase library didn't load (blocked CDN, bad
     // signal). Never fall back to the demo here: guests would think their
     // requests went through.

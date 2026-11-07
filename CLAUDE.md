@@ -49,7 +49,7 @@ site/                       static pages (no build step)
   assets/theme.js           sync <head>: Terrace/Finery, KT.now() rehearsal clock
   assets/config.js          public Supabase URL + anon key (sync <head>, before features.js)
   assets/features.js        sync <head>: feature switches + timed release (server + fallback)
-  assets/site.js            crest triple-tap (night colors), schedule "now", ?pass= capture, Wi-Fi
+  assets/site.js            crest triple-tap (night colors), "My pass" link, schedule "now", ?pass= capture, Wi-Fi
   assets/songs-client.js    data layer (songs, DJ, camera, organizer): live Supabase or demo
   assets/songs.js, dj.js    the two song pages
   assets/camera.js          capture, resize, IndexedDB queue, retries
@@ -90,7 +90,8 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
   `features()` and cached on the phone; the `DEFAULTS` in `features.js` are the
   fallback when Supabase is unreachable. In HTML: `data-feature="<name>"` on
   nav items, cards and mentions (hidden when off or closed), `data-requires` on
-  the tool, `data-until` on its "opens at" notice, `<html data-page-feature>`
+  the tool, `data-until` on its "opens at" notice, `data-yields` on what
+  steps aside while a feature is open, `<html data-page-feature>`
   on its page (sent home when off). A new feature needs a row in the
   migration's check list, a line in `features.js` and one in each rule group at
   the top of `site.css`. `/p/`, `/photos/` and `/admin/` belong to no feature.
@@ -128,7 +129,7 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
   never changes it once issued (`private/pass-tokens.csv` is the source of
   truth: back it up). The paper pass's QR is `https://wedding.peitzman.net/p/?pass=<token>`.
 - Any page opened with `?pass=<token>` stores it on the phone (`site.js`) and
-  strips it from the URL.
+  strips it from the URL; the header then links back to `/p/` ("My pass").
 - Song board: anonymous per phone (a Supabase anonymous user) so guests can
   request from home; once a pass is claimed, their name ("Josephine M.") is
   attached to their requests. Titles of Spotify tracks link to
@@ -173,9 +174,20 @@ The roadmap drawing is in the Event Webapp Plan doc.
 Static Home, Schedule (timeline + room map), Details; day colors (night by
 three taps on the crest);
 rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
-- ✅ Home: Wi-Fi card (Linden Club Guest / 24Welcome in plain text; **Join
-  Wi-Fi** copies the password, since a page can't join a network; a WIFI: QR
-  for another phone to scan).
+- ✅ Wi-Fi card, last on Home and on `/p/` (Linden Club Guest / 24Welcome in
+  plain text; **Join Wi-Fi** copies the password, since a page can't join a
+  network; a WIFI: QR for another phone to scan, folded away).
+- ✅ **My pass** in the guest header once this phone has a pass: set when a
+  `?pass=` link is opened (`kt-has-pass` in localStorage), confirmed or taken
+  away whenever the server answers `has_pass` (`songs-client.js` →
+  `KT.setHasPass`). With five items the nav tightens slightly on phones to stay
+  on one line down to 320px.
+- ✅ **Camera** in the guest nav while the camera is open (`kt-open-camera`
+  from `features.js`); Details steps aside then (`data-yields="camera"`), as
+  six items don't fit on a phone. Details is switched off for the night
+  anyway (guests first see the site at the venue). Without JS, Details shows.
+- ✅ Schedule page leads with the map ("Finding your way", the 1-2-3 key and
+  **Show restrooms**), then the timeline.
 - ✅ Nov 5: the timeline follows the final "Wedding Schedule" sheet (guest-facing
   items only: arrive 5:00, ceremony 5:30, cocktail hour 6:00, champagne tower
   7:00, grand entrance 7:15 … last call 10:15, good night and the party bus
