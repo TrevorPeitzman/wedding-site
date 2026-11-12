@@ -106,6 +106,16 @@
               <button class="kt-btn kt-btn-secondary" type="button" id="release">Release photos now</button>
             </div>
           </form>
+          <form class="stack adm-danger" id="gallery-pw-form">
+            <p class="kt-label">Gallery password</p>
+            <p class="kt-hint">Lets guests see the photos without their boarding pass: use the same password as our wedding website on Zola. Capitals and spaces don’t matter.</p>
+            <p class="kt-hint" id="gallery-pw-state" aria-live="polite"></p>
+            <div class="kt-field">
+              <label class="kt-label" for="gallery-pw">New password</label>
+              <input class="kt-input" id="gallery-pw" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="4" required>
+            </div>
+            <div><button class="kt-btn kt-btn-secondary kt-btn-sm" type="submit">Save password</button></div>
+          </form>
           <div class="stack adm-danger">
             <p class="kt-label">Shots by guest</p>
             <p class="kt-hint">A reset gives a pass all its shots again. Photos already taken stay uploaded and in the gallery.</p>
