@@ -138,6 +138,8 @@ each one); the DJ keeps the DJ view open.
       `photos`, or `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
 - [ ] Photographer's or friends' photos: `/admin/` → **Photo album** (with a
       credit); they appear for guests with everyone's photos.
+- [ ] Set the **gallery password** (`/admin/` → Camera), the same as the Zola
+      site, so guests can see the photos from home without their pass.
 - [ ] Photos come out on schedule, or `/admin/` → **Release photos now**.
       Guests save from `/photos/`: **Select** some (up to 10 go straight to
       a phone's photos through the share sheet) or **Save all** (.zip files).

@@ -56,6 +56,18 @@
     <div class="stack">
       <p class="kt-hint center" id="loading">Developing…</p>
       <div class="gal-msg" id="message" aria-live="polite"></div>
+      <form class="kt-card" id="unlock" hidden>
+        <h2 class="kt-card-title">The photos are for our guests</h2>
+        <div class="kt-card-body stack">
+          <p>Enter the password from our wedding website on Zola, or scan the QR on your boarding pass.</p>
+          <div class="kt-field">
+            <label class="kt-label" for="gallery-password">Password</label>
+            <input class="kt-input" id="gallery-password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+          </div>
+          <p class="kt-error" id="unlock-error" role="alert" hidden></p>
+        </div>
+        <div class="kt-card-actions"><button class="kt-btn kt-btn-primary" type="submit" id="unlock-go">See the photos</button></div>
+      </form>
       <section class="kt-card" id="no-pass" hidden>
         <h2 class="kt-card-title">Scan your boarding pass</h2>
         <div class="kt-card-body"><p>The photos are for our guests. Scan the QR on your boarding pass, then come back to this page.</p></div>

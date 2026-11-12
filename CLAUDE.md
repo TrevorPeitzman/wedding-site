@@ -40,7 +40,7 @@ site/                       static pages (no build step)
   songs/                    guest song board; songs/dj/ is the DJ view
   dj/                       shortcut: /dj/#key=… → /songs/dj/#key=…
   camera/                   disposable camera (pass required, no peeking)
-  photos/                   the reveal: everyone's photos + the album, guests with a pass; select + save
+  photos/                   the reveal: everyone's photos + the album; a pass or the gallery password; select + save
   p/                        QR landing page (/p/?pass=<token>), never switched off
   admin/                    organizer screen: feature switches + times, camera, reveal, photos, album, rehearsal
   404.html                  GitHub Pages' not-found page
@@ -286,6 +286,11 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   on request; **Hide** keeps one out of the gallery (still a shot);
   download selected or all as .zip files of 100 (`admin_photos`,
   `admin_hide_photo`, the `camera` function's `admin_photos`).
+- ✅ Gallery password: `/photos/` opens for a phone with a pass **or** the one
+  shared password (the same as the Zola site), set in `/admin/` → Camera →
+  Gallery password (bcrypt hash in `app_private.settings`; capitals and
+  spaces ignored). A phone let in is remembered (`guests.gallery_unlocked_at`);
+  10 wrong tries in 15 minutes pause it. Not set: pass holders only.
 - ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
   up to 10, so they land in the camera roll), or Save all (.zip files).
 - Organizer export: `/admin/` → Download all, or see supabase/README.md.

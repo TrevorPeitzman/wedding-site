@@ -8,7 +8,8 @@
 //
 // POST { action: "gallery" }  -> { ok, photos: [{ path, url }] }
 //   After the reveal, signed URLs (1 hour) for every uploaded photo, for a
-//   phone holding a claimed pass. Before it, a not_revealed refusal.
+//   phone holding a claimed pass or let in by the gallery password
+//   (unlock_gallery). Before it, a not_revealed refusal.
 //
 // POST { action: "purge", key, what: "test_pass" | "test_passes", token? }
 //   Organizer only (rehearsal): drops test shots and removes their files.
