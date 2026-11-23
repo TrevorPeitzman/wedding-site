@@ -39,9 +39,10 @@
         <ul>
           <li><a href="/">Home</a></li>
           <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
-          <li data-feature="details" data-yields="camera"><a href="/details/">Details</a></li>
+          <li data-feature="details" data-yields="camera photos"><a href="/details/">Details</a></li>
           <li data-feature="songs"><a href="/songs/">Songs</a></li>
           <li class="nav-camera"><a href="/camera/">Camera</a></li>
+          <li class="nav-photos"><a href="/photos/">Photos</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -64,6 +65,13 @@
         <div id="pass-card"></div>
         <div class="wal-actions" id="wallet-actions" hidden></div>
         <p class="kt-hint center" id="wallet-hint" hidden></p>
+      </section>
+
+      <section class="kt-card" data-requires="photos">
+        <p class="kt-card-eyebrow">After the party</p>
+        <h2 class="kt-card-title">Everyone’s photos are out</h2>
+        <div class="kt-card-body"><p>Every shot from the night. Save your favorites.</p></div>
+        <div class="kt-card-actions"><a class="kt-btn kt-btn-primary" href="/photos/">See the photos</a></div>
       </section>
 
       <section class="kt-card" data-feature="camera">

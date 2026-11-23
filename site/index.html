@@ -27,9 +27,10 @@
         <ul>
           <li><a href="/" aria-current="page">Home</a></li>
           <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
-          <li data-feature="details" data-yields="camera"><a href="/details/">Details</a></li>
+          <li data-feature="details" data-yields="camera photos"><a href="/details/">Details</a></li>
           <li data-feature="songs"><a href="/songs/">Songs</a></li>
           <li class="nav-camera"><a href="/camera/">Camera</a></li>
+          <li class="nav-photos"><a href="/photos/">Photos</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -59,6 +60,13 @@
     <div class="kt-divider" role="separator"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 2 L15 9 L9 16 L3 9 Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="9" cy="9" r="1.6" fill="currentColor"/></svg></div>
 
     <div class="stack">
+      <section class="kt-card" data-requires="photos">
+        <p class="kt-card-eyebrow">The disposable camera</p>
+        <h2 class="kt-card-title">Everyone’s photos are out</h2>
+        <div class="kt-card-body"><p>Every shot from the night. Save your favorites.</p></div>
+        <div class="kt-card-actions"><a class="kt-btn kt-btn-secondary" href="/photos/">See the photos</a></div>
+      </section>
+
       <section class="kt-card" data-feature="schedule">
         <p class="kt-card-eyebrow">The evening</p>
         <h2 class="kt-card-title">Schedule</h2>

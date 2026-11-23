@@ -34,9 +34,10 @@
         <ul>
           <li><a href="/">Home</a></li>
           <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
-          <li data-feature="details" data-yields="camera"><a href="/details/">Details</a></li>
+          <li data-feature="details" data-yields="camera photos"><a href="/details/">Details</a></li>
           <li data-feature="songs"><a href="/songs/">Songs</a></li>
           <li class="nav-camera"><a href="/camera/">Camera</a></li>
+          <li class="nav-photos"><a href="/photos/" aria-current="page">Photos</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -78,6 +79,11 @@
           <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" id="select" aria-pressed="false">Select</button>
           <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="save-all">Save all</button>
         </div>
+      </div>
+      <div class="stack gal-look" id="look" hidden>
+        <label class="kt-choice"><input type="checkbox" id="retro"><span>Disposable look</span></label>
+        <p class="kt-hint">Saves the camera’s photos with a film look and the date in the corner, like the real thing.</p>
+        <img class="gal-look-preview" id="retro-preview" alt="One of the photos with the disposable look" hidden>
       </div>
       <div class="gal-msg" id="save-message" aria-live="polite"></div>
       <section class="stack" id="camera-section" aria-labelledby="camera-title" hidden>

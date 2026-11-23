@@ -37,7 +37,10 @@
     details:  { on: true },
     songs:    { on: true },
     camera:   { on: true },
-    wallet:   { on: true }
+    wallet:   { on: true },
+    // Not a switch: open from the photo reveal (events.photos_reveal_at),
+    // reported by features(). Offline fallback: the default reveal time.
+    photos:   { on: true, opensAt: '2026-11-22T23:00:00-08:00' }
   };
   var NAMES = Object.keys(DEFAULTS);
 
