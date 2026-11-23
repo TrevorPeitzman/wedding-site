@@ -338,7 +338,11 @@
     ph.busy = true; phCount();
     var progress = $('photo-progress');
     progress.hidden = false; progress.textContent = 'Getting ready…';
-    KT.photoTools.save(list.map(function (p) { return { url: p.url, name: phFile(p), date: new Date(p.uploaded_at) }; }), {
+    var retro = $('photo-retro').checked;
+    KT.photoTools.save(list.map(function (p) {
+      return { url: p.url, name: phFile(p), date: new Date(p.uploaded_at),
+               stamp: retro ? new Date(p.taken_at || p.uploaded_at) : null };
+    }), {
       zipName: zipName,
       onProgress: function (done, total, label) { progress.textContent = label + ' ' + done + ' of ' + total + '…'; },
       ask: function (label) {

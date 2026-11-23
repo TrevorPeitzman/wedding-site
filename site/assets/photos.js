@@ -31,6 +31,32 @@
   function fileName(i) { return 'KT1121-' + ('00' + (i + 1)).slice(-3) + '.jpg'; }
   function pickedList() { return photos.filter(function (p, i) { return picked[i]; }); }
 
+  // The disposable look: camera photos only (not the album), stamped with
+  // when each was taken. Remembered on this phone.
+  var retro = false;
+  try { retro = localStorage.getItem('kt-retro') === '1'; } catch (e) {}
+  function asItem(p) {
+    return { url: p.dl, name: p.name, stamp: retro && p.section === 'camera' && p.taken ? new Date(p.taken) : null };
+  }
+  var previewUrl = null;
+  function showLook() {
+    var cams = photos.filter(function (p) { return p.section === 'camera' && p.taken; });
+    $('look').hidden = !cams.length || !KT.photoTools.disposable;
+    $('retro').checked = retro;
+    var img = $('retro-preview');
+    if (!retro || !cams.length) { img.hidden = true; return; }
+    if (previewUrl) { img.hidden = false; return; }
+    fetch(cams[0].url).then(function (r) { return r.blob(); })
+      .then(function (b) { return KT.photoTools.disposable(b, new Date(cams[0].taken)); })
+      .then(function (b) { previewUrl = URL.createObjectURL(b); img.src = previewUrl; img.hidden = !retro; })
+      .catch(function () {});
+  }
+  $('retro').addEventListener('change', function () {
+    retro = this.checked;
+    try { localStorage.setItem('kt-retro', retro ? '1' : '0'); } catch (e) {}
+    showLook();
+  });
+
   function tile(p, i) {
     var li = document.createElement('li'), a = document.createElement('a'), img = document.createElement('img');
     a.href = p.dl; a.target = '_blank'; a.rel = 'noopener';
@@ -90,7 +116,7 @@
     busy = true; update();
     var note = $('bar-note');
     note.textContent = 'Getting ready…';
-    KT.photoTools.save(list.map(function (p) { return { url: p.dl, name: p.name }; }), {
+    KT.photoTools.save(list.map(asItem), {
       zipName: zipName,
       onProgress: function (done, total, label) { note.textContent = label + ' ' + done + ' of ' + total + '…'; },
       ask: function (label) {
@@ -156,7 +182,7 @@
       return api.camera.gallery().then(function (g) {
         var album = g.album || [];
         if (!g.photos.length && !album.length) { notice('info', 'Nothing yet', 'No photos have come through.'); return; }
-        photos = g.photos.map(function (p, i) { return { url: p.url, dl: p.url, name: fileName(i), section: 'camera' }; })
+        photos = g.photos.map(function (p, i) { return { url: p.url, dl: p.url, name: fileName(i), section: 'camera', taken: p.taken_at }; })
           .concat(album.map(function (a, i) {
             return { url: a.web_url, dl: a.full_url, section: 'album',
                      name: 'KT1121-album-' + ('00' + (i + 1)).slice(-3) + '.' + (a.ext || 'jpg') };
@@ -164,6 +190,7 @@
         var credits = [];
         album.forEach(function (a) { if (a.credit && credits.indexOf(a.credit) < 0) credits.push(a.credit); });
         render(credits);
+        showLook();
       });
     }).catch(function (err) {
       $('loading').hidden = true;

@@ -329,6 +329,8 @@
     ['schedule', 'details', 'songs', 'camera', 'wallet'].forEach(function (n) {
       if (!f[n]) f[n] = { on: true, opens_at: null, closes_at: null };
     });
+    // Photos follow the demo reveal, as features() does on the server.
+    f.photos = { on: true, opens_at: cam().reveal_at || DEMO_REVEAL, closes_at: null };
     return f;
   }
 
@@ -558,6 +560,7 @@
             var c = cam();
             if (settings.photos_reveal_at) c.reveal_at = settings.photos_reveal_at === 'now' ? new Date().toISOString() : settings.photos_reveal_at;
             saveCam(c);
+            try { localStorage.setItem('kt-features-demo', JSON.stringify(demoFeatures())); } catch (e) {}
           });
         },
         // Demo rehearsal: fake test passes in localStorage. Their links open
@@ -695,7 +698,7 @@
           if (!load().me.from_pass && !demoGalleryOpen()) return fail('no_access', 'Enter the password, or scan the QR on your boarding pass, to see the photos.');
           if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
           return later({ ok: true, photos: demoPhotos(false).filter(function (p) { return !p.hidden; })
-            .map(function (p) { return { path: p.path, url: p.url }; }),
+            .map(function (p) { return { path: p.path, url: p.url, taken_at: p.uploaded_at }; }),
             album: demoAlbum().filter(function (a) { return !a.hidden; }) });
         }
       },

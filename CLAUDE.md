@@ -94,7 +94,8 @@ private/                    GIT-IGNORED guest data (tokens, SQL, print CSV)
   steps aside while a feature is open, `<html data-page-feature>`
   on its page (sent home when off). A new feature needs a row in the
   migration's check list, a line in `features.js` and one in each rule group at
-  the top of `site.css`. `/p/`, `/photos/` and `/admin/` belong to no feature.
+  the top of `site.css`. `/p/`, `/photos/`, `/admin/` and the DJ view belong to
+  no feature; `photos` (open from the reveal time) is in the list but is not a switch.
 - DB rules: a new file in `supabase/migrations/` per change (never edit one
   that has been applied); run `tests/sql/run.sh`; add a test for each rule.
   Every `DELETE`/`UPDATE` in a public function needs a `WHERE` (Supabase's
@@ -291,6 +292,18 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   Gallery password (bcrypt hash in `app_private.settings`; capitals and
   spaces ignored). A phone let in is remembered (`guests.gallery_unlocked_at`);
   10 wrong tries in 15 minutes pause it. Not set: pass holders only.
+- ✅ After the night: `features()` also reports **photos** (open from
+  `photos_reveal_at`; not a switch). Then a **Photos** link joins the guest
+  nav (`.nav-photos`, in Camera's place; Details yields to it too), and Home
+  and `/p/` show an "Everyone's photos are out" card (`data-requires="photos"`),
+  so the gallery stays reachable with the camera switched off. The DJ view
+  belongs to no feature (it opens with song requests off).
+- ✅ **Disposable look** on downloads (`/photos/` switch with a preview,
+  remembered; `/admin/` → Photos): camera photos (not the album) get film
+  colour, vignette, grain, a light leak and an orange seven-segment date
+  stamp `'26 11 21 21:47` (Pacific; when the shot was taken, `reserved_at`),
+  drawn in the browser (`KT.photoTools.disposable`). `gallery_photos_as`
+  returns `{path, taken_at}`; `admin_photos` has `taken_at`.
 - ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
   up to 10, so they land in the camera roll), or Save all (.zip files).
 - Organizer export: `/admin/` → Download all, or see supabase/README.md.
