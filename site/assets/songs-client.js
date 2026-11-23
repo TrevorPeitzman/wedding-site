@@ -106,6 +106,9 @@
         board: function (key) { return rpc('admin_board', { p_key: key }); },
         // Looks up BPM and genre for requested tracks that don't have them yet.
         details: function (key) { return fn({ action: 'details', key: key }); },
+        galleryPassword: function (key, password) {
+          return rpc('admin_gallery_password', { p_key: key, p_password: password || null });
+        },
         setStatus: function (key, id, status) {
           return rpc('admin_set_status', { p_key: key, p_request_id: id, p_status: status });
         },
@@ -192,6 +195,15 @@
         gallery: function () {
           return ensureSession().then(function () { return api.init(); })
             .then(function () { return fn({ action: 'gallery' }, 'camera'); });
+        },
+        // The photos page: a pass on this phone, or the shared password.
+        galleryStatus: function () {
+          return ensureSession().then(function () { return api.init(); })
+            .then(function () { return rpc('gallery_status'); });
+        },
+        unlockGallery: function (password) {
+          return ensureSession().then(function () { return rpc('unlock_gallery', { p_password: password }); })
+            .then(function (r) { if (!r.access) throw refusal(r.code, r.message); return r; });
         }
       },
       // Wallet: the claimed pass for the landing page, and its Apple link
@@ -307,6 +319,9 @@
       .map(function (a) { return Object.assign({}, a, { hidden: !!st.hidden[a.id] }); });
   }
   function saveDemoAlbumState(st) { try { localStorage.setItem('kt-album-demo', JSON.stringify(st)); } catch (e) {} }
+  function demoGalleryOpen() {
+    try { return localStorage.getItem('kt-gallery-demo') === '1'; } catch (e) { return false; }
+  }
   function demoFeatures() {
     var f = null;
     try { f = JSON.parse(localStorage.getItem('kt-features-demo')); } catch (e) {}
@@ -314,6 +329,8 @@
     ['schedule', 'details', 'songs', 'camera', 'wallet'].forEach(function (n) {
       if (!f[n]) f[n] = { on: true, opens_at: null, closes_at: null };
     });
+    // Photos follow the demo reveal, as features() does on the server.
+    f.photos = { on: true, opens_at: cam().reveal_at || DEMO_REVEAL, closes_at: null };
     return f;
   }
 
@@ -475,6 +492,13 @@
       },
       admin: {
         details: function () { return later({ ok: true, filled: 0 }); },
+        galleryPassword: function (key, password) {
+          if (password != null && password.trim().length < 4) return fail('too_short', 'The password needs at least 4 characters.');
+          return admin(key, function () {
+            if (password != null) { try { localStorage.setItem('kt-gallery-pw-demo', password.trim().toLowerCase()); } catch (e) {} }
+            return { set: true, phones: demoGalleryOpen() ? 1 : 0 };
+          });
+        },
         board: function (key) {
           return admin(key, function (s) {
             return { event: Object.assign({ name: 'Katarina & Trevor' }, s.event), requests: ranked(s, true), rules: s.rules };
@@ -536,6 +560,7 @@
             var c = cam();
             if (settings.photos_reveal_at) c.reveal_at = settings.photos_reveal_at === 'now' ? new Date().toISOString() : settings.photos_reveal_at;
             saveCam(c);
+            try { localStorage.setItem('kt-features-demo', JSON.stringify(demoFeatures())); } catch (e) {}
           });
         },
         // Demo rehearsal: fake test passes in localStorage. Their links open
@@ -651,11 +676,29 @@
           saveCam(c);
           return later({ photo_id: photoId, status: 'uploaded' });
         },
+        // Demo password: "kt1121", or whatever the demo organizer screen set.
+        galleryStatus: function () {
+          var pass = storedPass();
+          if (pass) { var s0 = load(); s0.me = { name: 'Guest with pass', from_pass: true }; save(s0); forgetPass(); }
+          var has = !!load().me.from_pass, reveal = cam().reveal_at || DEMO_REVEAL;
+          return later({ has_pass: has, access: has || demoGalleryOpen(), password_set: true, reveal_at: reveal,
+                         revealed: (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(reveal) });
+        },
+        unlockGallery: function (password) {
+          var want = 'kt1121';
+          try { want = localStorage.getItem('kt-gallery-pw-demo') || want; } catch (e) {}
+          if (String(password || '').trim().toLowerCase() !== want) {
+            return fail('wrong_password', 'That isn’t the password. It’s the same one as our wedding website on Zola.');
+          }
+          try { localStorage.setItem('kt-gallery-demo', '1'); } catch (e) {}
+          return later({ access: true });
+        },
         gallery: function () {
           var revealed = (KT.now ? KT.now() : new Date()).getTime() >= Date.parse(cam().reveal_at || DEMO_REVEAL);
+          if (!load().me.from_pass && !demoGalleryOpen()) return fail('no_access', 'Enter the password, or scan the QR on your boarding pass, to see the photos.');
           if (!revealed) return fail('not_revealed', 'The photos aren’t out yet.');
           return later({ ok: true, photos: demoPhotos(false).filter(function (p) { return !p.hidden; })
-            .map(function (p) { return { path: p.path, url: p.url }; }),
+            .map(function (p) { return { path: p.path, url: p.url, taken_at: p.uploaded_at }; }),
             album: demoAlbum().filter(function (a) { return !a.hidden; }) });
         }
       },
@@ -685,9 +728,13 @@
   // which shows "My pass" in the header from then on (or takes it away).
   function remembersPass(api) {
     var note = function (r) { if (r && 'has_pass' in r && KT.setHasPass) KT.setHasPass(!!r.has_pass); return r; };
-    var card = api.wallet.card, status = api.camera.status;
+    var card = api.wallet.card, status = api.camera.status, gstatus = api.camera.galleryStatus;
     api.wallet.card = function () { return card.apply(this, arguments).then(note); };
     api.camera.status = function () { return status.apply(this, arguments).then(note); };
+    api.camera.galleryStatus = function () {
+      // Only a "yes" counts here: a phone let in by password has no pass.
+      return gstatus.apply(this, arguments).then(function (r) { if (r && r.has_pass && KT.setHasPass) KT.setHasPass(true); return r; });
+    };
     return api;
   }
 
@@ -711,11 +758,11 @@
     var down = function () { return Promise.reject(refusal('unavailable', 'We couldn’t connect. Check your signal and reload the page.')); };
     return (client = { mode: 'offline', init: function () { return Promise.resolve(); }, board: down, search: down,
       request: down, vote: down,
-      admin: { board: down, details: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
+      admin: { board: down, details: down, galleryPassword: down, setStatus: down, updateEvent: down, addRule: down, deleteRule: down, camera: down,
                features: down, setFeature: down, setCamera: down, rehearsal: down, makeTestPasses: down,
                resetTestPass: down, deleteTestPasses: down, clearSongs: down, photos: down, hidePhoto: down,
                shots: down, resetShots: down, albumList: down, albumUpload: down, albumHide: down, albumDelete: down },
-      camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down },
+      camera: { status: down, reserve: down, upload: down, confirm: down, gallery: down, galleryStatus: down, unlockGallery: down },
       wallet: { card: down, appleUrl: function () { return '#'; } } });
   };
 })();

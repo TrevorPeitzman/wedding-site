@@ -34,9 +34,10 @@
         <ul>
           <li><a href="/">Home</a></li>
           <li data-feature="schedule"><a href="/schedule/">Schedule</a></li>
-          <li data-feature="details" data-yields="camera"><a href="/details/">Details</a></li>
+          <li data-feature="details" data-yields="camera photos"><a href="/details/">Details</a></li>
           <li data-feature="songs"><a href="/songs/">Songs</a></li>
           <li class="nav-camera"><a href="/camera/">Camera</a></li>
+          <li class="nav-photos"><a href="/photos/" aria-current="page">Photos</a></li>
         </ul>
       </nav>
       <button class="kt-btn kt-btn-quiet kt-btn-sm theme-toggle" type="button" aria-pressed="false" hidden>
@@ -56,6 +57,18 @@
     <div class="stack">
       <p class="kt-hint center" id="loading">Developing…</p>
       <div class="gal-msg" id="message" aria-live="polite"></div>
+      <form class="kt-card" id="unlock" hidden>
+        <h2 class="kt-card-title">The photos are for our guests</h2>
+        <div class="kt-card-body stack">
+          <p>Enter the password from our wedding website on Zola, or scan the QR on your boarding pass.</p>
+          <div class="kt-field">
+            <label class="kt-label" for="gallery-password">Password</label>
+            <input class="kt-input" id="gallery-password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+          </div>
+          <p class="kt-error" id="unlock-error" role="alert" hidden></p>
+        </div>
+        <div class="kt-card-actions"><button class="kt-btn kt-btn-primary" type="submit" id="unlock-go">See the photos</button></div>
+      </form>
       <section class="kt-card" id="no-pass" hidden>
         <h2 class="kt-card-title">Scan your boarding pass</h2>
         <div class="kt-card-body"><p>The photos are for our guests. Scan the QR on your boarding pass, then come back to this page.</p></div>
@@ -66,6 +79,11 @@
           <button class="kt-btn kt-btn-secondary kt-btn-sm" type="button" id="select" aria-pressed="false">Select</button>
           <button class="kt-btn kt-btn-quiet kt-btn-sm" type="button" id="save-all">Save all</button>
         </div>
+      </div>
+      <div class="stack gal-look" id="look" hidden>
+        <label class="kt-choice"><input type="checkbox" id="retro"><span>Disposable look</span></label>
+        <p class="kt-hint">Saves the camera’s photos with a film look and the date in the corner, like the real thing.</p>
+        <img class="gal-look-preview" id="retro-preview" alt="One of the photos with the disposable look" hidden>
       </div>
       <div class="gal-msg" id="save-message" aria-live="polite"></div>
       <section class="stack" id="camera-section" aria-labelledby="camera-title" hidden>

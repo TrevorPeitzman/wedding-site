@@ -6,9 +6,10 @@
 //   phone uploads with supabase.storage.from('photos').uploadToSignedUrl(),
 //   then calls the confirm_shot RPC, which checks the file really arrived.
 //
-// POST { action: "gallery" }  -> { ok, photos: [{ path, url }] }
+// POST { action: "gallery" }  -> { ok, photos: [{ path, url, taken_at }], album }
 //   After the reveal, signed URLs (1 hour) for every uploaded photo, for a
-//   phone holding a claimed pass. Before it, a not_revealed refusal.
+//   phone holding a claimed pass or let in by the gallery password
+//   (unlock_gallery). Before it, a not_revealed refusal.
 //
 // POST { action: "purge", key, what: "test_pass" | "test_passes", token? }
 //   Organizer only (rehearsal): drops test shots and removes their files.
@@ -181,8 +182,11 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "gallery") {
-      const { data: paths, error } = await admin.rpc("gallery_paths_as", { p_guest: who.user.id });
+      // [{ path, taken_at }]: the time is for the date stamp on downloads.
+      const { data: shots, error } = await admin.rpc("gallery_photos_as", { p_guest: who.user.id });
       if (error) return fromDb(error);
+      const taken = new Map<string, string>((shots as { path: string; taken_at: string }[]).map((s) => [s.path, s.taken_at]));
+      const paths = [...taken.keys()];
       // gallery_paths_as checked the pass and the reveal; the album follows.
       const { data: albumRows, error: albumError } = await admin.rpc("album_paths");
       if (albumError) throw albumError;
@@ -191,7 +195,8 @@ Deno.serve(async (req) => {
       const { data: urls, error: urlError } = await admin.storage.from("photos").createSignedUrls(paths, 3600);
       if (urlError) throw urlError;
       return json({ ok: true, album,
-                    photos: urls.filter((u) => u.signedUrl).map((u) => ({ path: u.path, url: u.signedUrl })) });
+                    photos: urls.filter((u) => u.signedUrl)
+                      .map((u) => ({ path: u.path, url: u.signedUrl, taken_at: taken.get(u.path ?? "") ?? null })) });
     }
 
     return refuse("bad_request", "Unknown action.");

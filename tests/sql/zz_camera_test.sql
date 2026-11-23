@@ -75,7 +75,7 @@ reset role;
 
 -- Gallery: guests with a pass, after the reveal only.
 set role service_role;
-select t.expect_error($$select public.gallery_paths_as('00000000-0000-0000-0000-00000000000c')$$, 'no_pass');
+select t.expect_error($$select public.gallery_paths_as('00000000-0000-0000-0000-00000000000c')$$, 'no_access');
 select t.expect_error($$select public.gallery_paths_as('00000000-0000-0000-0000-0000000000d1')$$, 'not_revealed');
 reset role;
 set role anon;

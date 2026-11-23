@@ -31,6 +31,8 @@ tests/sql/    (repo root) run.sh: migrations + SQL tests on a throwaway Postgres
 | Download the Apple Wallet pass | Edge Function `wallet` (`GET ?t=<token>`) | whoever holds the token, while `wallet` is open |
 | DJ view | `rpc('admin_board' …)` with `p_key` | DJ key or organizer key |
 | Organizer screen | `rpc('admin_features' / 'admin_set_feature' / 'admin_set_camera')` | organizer key |
+| Gallery password: status, unlock | `rpc('gallery_status' / 'unlock_gallery')` | anyone / signed-in guest |
+| Set the gallery password | `rpc('admin_gallery_password')` | organizer key |
 | Organizer photos: list, hide | `camera` function `admin_photos`, `rpc('admin_hide_photo')` | organizer key |
 | Shots by guest, reset a counter | `rpc('admin_shots' / 'admin_reset_shots')` | organizer key |
 | Photo album: upload, list, hide, delete | `camera` function `album_reserve` / `album_list` / `album_delete`, `rpc('admin_album_confirm' / 'admin_album_hide')` | organizer key |
@@ -130,6 +132,10 @@ update public.events set photos_reveal_at = now();          -- release the photo
   dashboard, or with the CLI (check `supabase storage cp --help` first; it's
   experimental): `supabase storage cp -r ss:///photos ./photos-export --experimental --linked`.
 - Guests save from `/photos/` after the reveal: Select some or Save all.
+- **Gallery password** (`/admin/` → Camera → Gallery password): the same one
+  as the Zola site, so guests without their boarding pass (at home, on a
+  laptop) can see the photos. Only a bcrypt hash is kept; capitals and spaces
+  don't matter. By SQL: `select app_private.set_gallery_password('...');`
 - **Photo album** (`/admin/` → Photo album): photos from other cameras. Each
   is two files in the private `album` bucket, `<id>/full.<ext>` (the original:
   JPEG, PNG or WebP, up to 40 MB) and `<id>/web.jpg` (2048px, made in the

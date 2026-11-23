@@ -20,12 +20,15 @@
 .kt-off-songs [data-feature~="songs"],
 .kt-off-camera [data-feature~="camera"],
 .kt-off-wallet [data-feature~="wallet"],
+.kt-off-photos [data-feature~="photos"],
 .kt-off-songs [data-requires~="songs"], .kt-soon-songs [data-requires~="songs"],
 .kt-off-camera [data-requires~="camera"], .kt-soon-camera [data-requires~="camera"],
 .kt-off-wallet [data-requires~="wallet"], .kt-soon-wallet [data-requires~="wallet"],
+.kt-off-photos [data-requires~="photos"], .kt-soon-photos [data-requires~="photos"],
 html:not(.kt-soon-songs) [data-until~="songs"],
 html:not(.kt-soon-camera) [data-until~="camera"],
-html:not(.kt-soon-wallet) [data-until~="wallet"] { display: none !important; }
+html:not(.kt-soon-wallet) [data-until~="wallet"],
+html:not(.kt-soon-photos) [data-until~="photos"] { display: none !important; }
 
 html { -webkit-text-size-adjust: 100%; }
 body { min-height: 100vh; display: flex; flex-direction: column; }
@@ -53,6 +56,12 @@ img { max-width: 100%; height: auto; }
 .site-nav .nav-camera { display: none; }
 .kt-open-camera .site-nav .nav-camera { display: list-item; }
 .kt-open-camera [data-yields~="camera"] { display: none !important; }
+/* Once the photos are out, Photos takes the same place (and the camera, if
+   it is somehow still open, steps back to its cards). */
+.site-nav .nav-photos { display: none; }
+.kt-open-photos .site-nav .nav-photos { display: list-item; }
+.kt-open-photos .site-nav .nav-camera { display: none; }
+.kt-open-photos [data-yields~="photos"] { display: none !important; }
 
 /* The header toggle is hidden, so the nav can take the whole row (room for
    "My pass" once this phone has one). */

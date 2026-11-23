@@ -1,5 +1,5 @@
 /* The reveal: everyone's disposable-camera photos, for guests with a claimed
- * pass, from photos_reveal_at on. Signed links last an hour; reload for more.
+ * pass or the shared gallery password (the Zola one), from photos_reveal_at on. Signed links last an hour; reload for more.
  * Tap a photo to open it; Select picks some to save, Save all takes every
  * one (the share sheet on a phone for up to 10, otherwise .zip files).
  * The album (photos from other cameras, added in /admin/) follows in its
@@ -30,6 +30,32 @@
   function plural(n) { return n + ' photo' + (n === 1 ? '' : 's'); }
   function fileName(i) { return 'KT1121-' + ('00' + (i + 1)).slice(-3) + '.jpg'; }
   function pickedList() { return photos.filter(function (p, i) { return picked[i]; }); }
+
+  // The disposable look: camera photos only (not the album), stamped with
+  // when each was taken. Remembered on this phone.
+  var retro = false;
+  try { retro = localStorage.getItem('kt-retro') === '1'; } catch (e) {}
+  function asItem(p) {
+    return { url: p.dl, name: p.name, stamp: retro && p.section === 'camera' && p.taken ? new Date(p.taken) : null };
+  }
+  var previewUrl = null;
+  function showLook() {
+    var cams = photos.filter(function (p) { return p.section === 'camera' && p.taken; });
+    $('look').hidden = !cams.length || !KT.photoTools.disposable;
+    $('retro').checked = retro;
+    var img = $('retro-preview');
+    if (!retro || !cams.length) { img.hidden = true; return; }
+    if (previewUrl) { img.hidden = false; return; }
+    fetch(cams[0].url).then(function (r) { return r.blob(); })
+      .then(function (b) { return KT.photoTools.disposable(b, new Date(cams[0].taken)); })
+      .then(function (b) { previewUrl = URL.createObjectURL(b); img.src = previewUrl; img.hidden = !retro; })
+      .catch(function () {});
+  }
+  $('retro').addEventListener('change', function () {
+    retro = this.checked;
+    try { localStorage.setItem('kt-retro', retro ? '1' : '0'); } catch (e) {}
+    showLook();
+  });
 
   function tile(p, i) {
     var li = document.createElement('li'), a = document.createElement('a'), img = document.createElement('img');
@@ -90,7 +116,7 @@
     busy = true; update();
     var note = $('bar-note');
     note.textContent = 'Getting ready…';
-    KT.photoTools.save(list.map(function (p) { return { url: p.dl, name: p.name }; }), {
+    KT.photoTools.save(list.map(asItem), {
       zipName: zipName,
       onProgress: function (done, total, label) { note.textContent = label + ' ' + done + ' of ' + total + '…'; },
       ask: function (label) {
@@ -138,27 +164,53 @@
     save(photos, 'KT1121-photos', $('save-picked'));
   });
 
-  api.camera.status().then(function (s) {
-    $('loading').hidden = true;
-    if (!s.has_pass) { $('no-pass').hidden = false; return; }
-    if (!s.revealed) {
-      notice('info', 'Still developing', 'Everyone’s photos come out on ' + when(s.reveal_at) + '. Come back then!');
-      return;
-    }
-    return api.camera.gallery().then(function (g) {
-      var album = g.album || [];
-      if (!g.photos.length && !album.length) { notice('info', 'Nothing yet', 'No photos have come through.'); return; }
-      photos = g.photos.map(function (p, i) { return { url: p.url, dl: p.url, name: fileName(i), section: 'camera' }; })
-        .concat(album.map(function (a, i) {
-          return { url: a.web_url, dl: a.full_url, section: 'album',
-                   name: 'KT1121-album-' + ('00' + (i + 1)).slice(-3) + '.' + (a.ext || 'jpg') };
-        }));
-      var credits = [];
-      album.forEach(function (a) { if (a.credit && credits.indexOf(a.credit) < 0) credits.push(a.credit); });
-      render(credits);
+  // A pass on this phone, or the shared password (the Zola one), then the reveal.
+  function start() {
+    $('loading').hidden = false;
+    return api.camera.galleryStatus().then(function (s) {
+      $('loading').hidden = true;
+      if (!s.access) {
+        if (s.password_set) { $('unlock').hidden = false; $('gallery-password').focus(); }
+        else $('no-pass').hidden = false;
+        return;
+      }
+      $('unlock').hidden = true; $('no-pass').hidden = true;
+      if (!s.revealed) {
+        notice('info', 'Still developing', 'Everyone’s photos come out on ' + when(s.reveal_at) + '. Come back then!');
+        return;
+      }
+      return api.camera.gallery().then(function (g) {
+        var album = g.album || [];
+        if (!g.photos.length && !album.length) { notice('info', 'Nothing yet', 'No photos have come through.'); return; }
+        photos = g.photos.map(function (p, i) { return { url: p.url, dl: p.url, name: fileName(i), section: 'camera', taken: p.taken_at }; })
+          .concat(album.map(function (a, i) {
+            return { url: a.web_url, dl: a.full_url, section: 'album',
+                     name: 'KT1121-album-' + ('00' + (i + 1)).slice(-3) + '.' + (a.ext || 'jpg') };
+          }));
+        var credits = [];
+        album.forEach(function (a) { if (a.credit && credits.indexOf(a.credit) < 0) credits.push(a.credit); });
+        render(credits);
+        showLook();
+      });
+    }).catch(function (err) {
+      $('loading').hidden = true;
+      notice('danger', 'Not quite', err.message);
     });
-  }).catch(function (err) {
-    $('loading').hidden = true;
-    notice('danger', 'Not quite', err.message);
+  }
+
+  $('unlock').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var box = $('gallery-password'), go = $('unlock-go'), error = $('unlock-error');
+    if (!box.value.trim()) return;
+    go.disabled = true; error.hidden = true;
+    api.camera.unlockGallery(box.value).then(function () {
+      box.value = '';
+      return start();
+    }).catch(function (err) {
+      error.textContent = err.message; error.hidden = false;
+      box.select();
+    }).then(function () { go.disabled = false; });
   });
+
+  start();
 })();

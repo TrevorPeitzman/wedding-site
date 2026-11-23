@@ -59,3 +59,8 @@
 }
 .gal-bar .kt-hint { margin: 0; }
 .gal-msg:empty { display: none; }
+
+/* The disposable look: a switch, and a preview of one photo with it. */
+.gal-look { justify-items: start; }
+.gal-look .kt-hint { margin: 0; }
+.gal-look-preview { width: min(100%, 320px); border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }

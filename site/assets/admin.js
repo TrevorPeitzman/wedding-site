@@ -125,7 +125,7 @@
       return Promise.resolve();
     }
     return api.admin.features(key).then(function (d) {
-      data = d; $('key-form').hidden = true; $('admin').hidden = false; render(); loadRehearsal();
+      data = d; $('key-form').hidden = true; $('admin').hidden = false; render(); loadRehearsal(); loadGalleryPw();
       $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }).catch(function (err) {
       if (err.code === 'not_organizer') {
@@ -178,6 +178,23 @@
     api.admin.setCamera(key, { photos_reveal_at: 'now' })
       .then(function () { toast('The photos are out.'); return load(); })
       .catch(function (err) { toast(err.message, false); });
+  });
+
+  /* ---------------------------------------------------- gallery password -- */
+  function showGalleryPw(r) {
+    $('gallery-pw-state').textContent = r.set
+      ? 'Set. ' + r.phones + ' phone' + (r.phones === 1 ? '' : 's') + ' let in with it so far.'
+      : 'Not set: only guests with their boarding pass can see the photos.';
+  }
+  function loadGalleryPw() {
+    if (!key || !api.admin.galleryPassword) return;
+    api.admin.galleryPassword(key, null).then(showGalleryPw, function () {});
+  }
+  $('gallery-pw-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    api.admin.galleryPassword(key, $('gallery-pw').value).then(function (r) {
+      $('gallery-pw').value = ''; showGalleryPw(r); toast('Gallery password saved.');
+    }).catch(function (err) { toast(err.message, false); });
   });
 
   /* ---------------------------------------------------- shots by guest -- */
@@ -321,7 +338,11 @@
     ph.busy = true; phCount();
     var progress = $('photo-progress');
     progress.hidden = false; progress.textContent = 'Getting ready…';
-    KT.photoTools.save(list.map(function (p) { return { url: p.url, name: phFile(p), date: new Date(p.uploaded_at) }; }), {
+    var retro = $('photo-retro').checked;
+    KT.photoTools.save(list.map(function (p) {
+      return { url: p.url, name: phFile(p), date: new Date(p.uploaded_at),
+               stamp: retro ? new Date(p.taken_at || p.uploaded_at) : null };
+    }), {
       zipName: zipName,
       onProgress: function (done, total, label) { progress.textContent = label + ' ' + done + ' of ' + total + '…'; },
       ask: function (label) {

@@ -10,6 +10,10 @@
  *
  * KT.photoTools.webCopy(file) -> Promise<Blob>: a 2048px JPEG of an image
  * file (for the album's grid; the original is kept as is).
+ *
+ * An item with a `stamp` (a Date) is saved with the disposable-camera look:
+ * film colour, vignette, grain, a faint light leak and the orange date in
+ * the corner (KT.photoTools.disposable(blob, date) -> Promise<Blob>).
  * opts: { zipName, onProgress(done, total, label), ask(label) -> Promise }
  * `ask` shows a button and resolves when it's tapped: the share sheet needs
  * a fresh tap if fetching took too long.
@@ -78,6 +82,8 @@
       return fetch(it.url).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.blob();
+      }).then(function (blob) {
+        return it.stamp ? disposable(blob, it.stamp).catch(function () { return blob; }) : blob;
       }).then(function (blob) {
         out[i] = { name: it.name, blob: blob, date: it.date };
       }, function () { failed++; }).then(function () {
@@ -226,5 +232,89 @@
     });
   }
 
-  KT.photoTools = { save: save, zip: zip, crc32: crc32, slug: slug, webCopy: webCopy };
+  /* --------------------------------------------------- disposable look -- */
+  // The date back of a 90s point-and-shoot: '26 11 21 in glowing orange
+  // seven-segment digits, bottom right, Pacific time; plus warm film colour,
+  // lifted blacks, a vignette, grain and a faint light leak.
+  var SEGS = { '0': 'abcdef', '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg',
+               '6': 'acdefg', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g' };
+  function stampParts(date) {
+    var p = {};
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', year: '2-digit',
+      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(date).forEach(function (x) { p[x.type] = x.value; });
+    return "'" + p.year + ' ' + p.month + ' ' + p.day + '  ' + p.hour + ':' + p.minute;
+  }
+  // Draws the text right-aligned with its baseline at (x, y); h = digit height.
+  function drawStamp(g, text, x, y, h) {
+    var w = h * 0.5, t = h * 0.13, gap = h * 0.22, half = h / 2;
+    var widthOf = function (c) { return c === ' ' ? w * 0.6 : c === ':' || c === "'" ? t * 2.2 : w; };
+    var total = 0;
+    for (var i = 0; i < text.length; i++) total += widthOf(text[i]) + gap;
+    var cx = x - total;
+    g.save();
+    g.translate(0, y);
+    g.transform(1, 0, -0.08, 1, 0, 0);   // the slight slant of LED digits
+    var bar = function (bx, by, bw, bh) { g.fillRect(bx, by - h, bw, bh); };
+    for (var j = 0; j < text.length; j++) {
+      var c = text[j], segs = SEGS[c];
+      if (segs) {
+        if (segs.indexOf('a') >= 0) bar(cx + t, 0, w - 2 * t, t);
+        if (segs.indexOf('b') >= 0) bar(cx + w - t, t, t, half - t);
+        if (segs.indexOf('c') >= 0) bar(cx + w - t, half, t, half - t);
+        if (segs.indexOf('d') >= 0) bar(cx + t, h - t, w - 2 * t, t);
+        if (segs.indexOf('e') >= 0) bar(cx, half, t, half - t);
+        if (segs.indexOf('f') >= 0) bar(cx, t, t, half - t);
+        if (segs.indexOf('g') >= 0) bar(cx + t, half - t / 2, w - 2 * t, t);
+      } else if (c === ':') {
+        bar(cx + t * 0.6, h * 0.28, t, t); bar(cx + t * 0.6, h * 0.68, t, t);
+      } else if (c === "'") {
+        bar(cx + t * 0.6, 0, t, h * 0.3);
+      }
+      cx += widthOf(c) + gap;
+    }
+    g.restore();
+  }
+  function disposable(blob, date) {
+    var decode = window.createImageBitmap ? createImageBitmap(blob).catch(function () { return viaImage(blob); }) : viaImage(blob);
+    return decode.then(function (img) {
+      var c = document.createElement('canvas'), W = c.width = img.width, H = c.height = img.height;
+      var g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      if (img.close) img.close();
+      // Film colour: warm, a little faded, a touch more saturated; luma grain.
+      var px = g.getImageData(0, 0, W, H), d = px.data, seed = 1234567;
+      for (var i = 0; i < d.length; i += 4) {
+        var r = d[i], gg = d[i + 1], b = d[i + 2], l = 0.3 * r + 0.59 * gg + 0.11 * b;
+        r = l + (r - l) * 1.12; gg = l + (gg - l) * 1.12; b = l + (b - l) * 1.12;
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        var n = ((seed >> 16) / 32768 - 0.5) * 18;
+        d[i] = 16 + r * 0.92 * 1.05 + n;
+        d[i + 1] = 14 + gg * 0.92 + n;
+        d[i + 2] = 10 + b * 0.92 * 0.86 + n;
+      }
+      g.putImageData(px, 0, 0);
+      // Vignette.
+      var v = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.55);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.38)');
+      g.fillStyle = v; g.fillRect(0, 0, W, H);
+      // A faint warm light leak from one edge (which one varies by photo).
+      var left = (date.getTime() / 60000) % 2 < 1;
+      var leak = g.createLinearGradient(left ? 0 : W, 0, left ? W * 0.28 : W * 0.72, 0);
+      leak.addColorStop(0, 'rgba(255,120,40,0.22)'); leak.addColorStop(1, 'rgba(255,120,40,0)');
+      g.globalCompositeOperation = 'screen'; g.fillStyle = leak; g.fillRect(0, 0, W, H);
+      g.globalCompositeOperation = 'source-over';
+      // The date: glow first, then the bright digits.
+      var h = Math.round(Math.min(W, H) * 0.038), text = stampParts(date);
+      var x = W - Math.round(Math.min(W, H) * 0.05), y = H - Math.round(Math.min(W, H) * 0.05);
+      g.shadowColor = 'rgba(255,110,0,0.9)'; g.shadowBlur = h * 0.6;
+      g.fillStyle = 'rgba(255,150,40,0.85)';
+      drawStamp(g, text, x, y, h);
+      g.shadowBlur = h * 0.15; g.fillStyle = '#ffb347';
+      drawStamp(g, text, x, y, h);
+      return new Promise(function (ok, no) { c.toBlob(function (out) { out ? ok(out) : no(new Error('encode')); }, 'image/jpeg', 0.92); });
+    });
+  }
+
+  KT.photoTools = { save: save, zip: zip, crc32: crc32, slug: slug, webCopy: webCopy, disposable: disposable };
 })();

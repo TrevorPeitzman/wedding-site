@@ -3,7 +3,7 @@
 \set ON_ERROR_STOP 1
 
 set role anon;
-select t.check((select count(*) from jsonb_object_keys(public.features())) = 5, 'five features');
+select t.check((select count(*) from jsonb_object_keys(public.features() - 'photos')) = 5, 'five switches (and photos, from the reveal time)');
 select t.check(public.features()->'songs'->>'state' = 'open', 'songs open by default');
 select t.expect_error($$select * from public.feature_schedule$$, '<42501: permission denied for table feature_schedule>');
 
