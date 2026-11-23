@@ -303,7 +303,11 @@ rehearsal clock; crest; feature switches; QR landing page `/p/`; this file.
   colour, vignette, grain, a light leak and an orange seven-segment date
   stamp `'26 11 21 21:47` (Pacific; when the shot was taken, `reserved_at`),
   drawn in the browser (`KT.photoTools.disposable`). `gallery_photos_as`
-  returns `{path, taken_at}`; `admin_photos` has `taken_at`.
+  returns `{path, taken_at}`; `admin_photos` has `taken_at`. Renders run one
+  at a time and empty their canvas at once (iPhones cap canvas memory; past
+  it a render fails), a failure is retried once and any photo left plain is
+  reported. With the switch on, the grid shows the look too (480px renders
+  made as tiles scroll into view).
 - ✅ Guests save from `/photos/`: Select → Save (share sheet on a phone for
   up to 10, so they land in the camera roll), or Save all (.zip files).
 - Organizer export: `/admin/` → Download all, or see supabase/README.md.
