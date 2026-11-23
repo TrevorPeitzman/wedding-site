@@ -38,18 +38,42 @@
   function asItem(p) {
     return { url: p.dl, name: p.name, stamp: retro && p.section === 'camera' && p.taken ? new Date(p.taken) : null };
   }
-  var previewUrl = null;
+  // With the switch on, every camera tile shows the look too: a small render
+  // of each, made as it scrolls into view and kept for the visit.
+  var thumbs = {}, watcher = null;
+  function lookFor(i) {
+    var p = photos[i];
+    if (thumbs[i]) return Promise.resolve(thumbs[i]);
+    return fetch(p.url).then(function (r) { return r.blob(); })
+      .then(function (b) { return KT.photoTools.disposable(b, new Date(p.taken), { maxEdge: 480 }); })
+      .then(function (b) { return (thumbs[i] = URL.createObjectURL(b)); });
+  }
+  function paintTile(li) {
+    var i = Number(li.querySelector('input').getAttribute('data-i')), img = li.querySelector('img');
+    lookFor(i).then(function (u) { if (retro) img.src = u; }, function () {});
+  }
   function showLook() {
     var cams = photos.filter(function (p) { return p.section === 'camera' && p.taken; });
     $('look').hidden = !cams.length || !KT.photoTools.disposable;
     $('retro').checked = retro;
-    var img = $('retro-preview');
-    if (!retro || !cams.length) { img.hidden = true; return; }
-    if (previewUrl) { img.hidden = false; return; }
-    fetch(cams[0].url).then(function (r) { return r.blob(); })
-      .then(function (b) { return KT.photoTools.disposable(b, new Date(cams[0].taken)); })
-      .then(function (b) { previewUrl = URL.createObjectURL(b); img.src = previewUrl; img.hidden = !retro; })
-      .catch(function () {});
+    if (watcher) { watcher.disconnect(); watcher = null; }
+    var tiles = Array.prototype.slice.call(document.querySelectorAll('#grid > li'));
+    tiles.forEach(function (li) {
+      var i = Number(li.querySelector('input').getAttribute('data-i')), img = li.querySelector('img');
+      if (!retro || !photos[i].taken) img.src = photos[i].url;
+      else if (thumbs[i]) img.src = thumbs[i];
+    });
+    if (!retro || !cams.length) return;
+    var todo = tiles.filter(function (li) { return !thumbs[Number(li.querySelector('input').getAttribute('data-i'))]; });
+    if (!window.IntersectionObserver) { todo.forEach(paintTile); return; }
+    watcher = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        watcher.unobserve(e.target);
+        paintTile(e.target);
+      });
+    }, { rootMargin: '300px' });
+    todo.forEach(function (li) { watcher.observe(li); });
   }
   $('retro').addEventListener('change', function () {
     retro = this.checked;
@@ -132,6 +156,7 @@
       var msg = r.how === 'share' ? 'Saved through your phone’s share sheet.' :
         r.how === 'zip' ? 'Look in your downloads for the .zip' + (list.length > 100 ? ' files' : '') + '.' : 'Look in your downloads.';
       if (r.failed) msg += ' ' + plural(r.failed) + ' didn’t come through: reload the page and try those again.';
+      if (r.plain) msg += ' ' + plural(r.plain) + ' saved without the disposable look: this phone ran short of memory. Try those again on their own.';
       notice(r.saved ? 'success' : 'danger', r.saved ? plural(r.saved) + ' saved' : 'Not quite', r.saved ? msg : 'Reload the page and try again.', 'save-message');
       if (r.saved) picked = {};
     }).catch(function () {

@@ -356,6 +356,7 @@
       if (r.how === 'cancelled') { toast('Nothing saved.', false); return; }
       var msg = 'Saved ' + r.saved + ' photo' + (r.saved === 1 ? '' : 's') + (r.how === 'zip' ? ' as .zip' : '') + '.';
       if (r.failed) msg += ' ' + r.failed + ' didn’t download: press Refresh photos and try again.';
+      if (r.plain) msg += ' ' + r.plain + ' saved without the disposable look (out of memory): try those again on their own.';
       toast(msg, r.saved ? true : false);
     }).catch(function (err) {
       toast((err && err.message) || 'That didn’t work. Try again?', false);

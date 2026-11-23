@@ -75,7 +75,7 @@
     return String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '');
   }
   function fetchAll(items, onProgress) {
-    var out = new Array(items.length), next = 0, done = 0, failed = 0;
+    var out = new Array(items.length), next = 0, done = 0, failed = 0, plain = 0;
     function worker() {
       if (next >= items.length) return Promise.resolve();
       var i = next++, it = items[i];
@@ -83,7 +83,7 @@
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.blob();
       }).then(function (blob) {
-        return it.stamp ? disposable(blob, it.stamp).catch(function () { return blob; }) : blob;
+        return it.stamp ? disposable(blob, it.stamp).catch(function () { plain++; return blob; }) : blob;
       }).then(function (blob) {
         out[i] = { name: it.name, blob: blob, date: it.date };
       }, function () { failed++; }).then(function () {
@@ -95,7 +95,7 @@
     var workers = [];
     for (var w = 0; w < Math.min(PARALLEL, items.length); w++) workers.push(worker());
     return Promise.all(workers).then(function () {
-      return { files: out.filter(Boolean), failed: failed };
+      return { files: out.filter(Boolean), failed: failed, plain: plain };
     });
   }
   function download(blob, filename) {
@@ -144,7 +144,7 @@
         var files = asFiles(got.files);
         if (files.length && canShare(files)) {
           return share(files, opts.ask).then(function () {
-            return { saved: files.length, failed: got.failed, how: 'share' };
+            return { saved: files.length, failed: got.failed, plain: got.plain, how: 'share' };
           }, function (err) {
             if (err && err.name === 'AbortError') return { saved: 0, failed: got.failed, how: 'cancelled' };
             throw err;
@@ -160,7 +160,7 @@
 
     // Many: .zip files of up to PART photos or PART_BYTES each, fetched a
     // batch at a time, so a phone never holds more than about one part.
-    var saved = 0, failed = 0, done = 0, partNo = 0, part = [], partBytes = 0;
+    var saved = 0, failed = 0, plain = 0, done = 0, partNo = 0, part = [], partBytes = 0;
     function flush(last) {
       if (!part.length) return;
       partNo++;
@@ -174,7 +174,7 @@
         chain = chain.then(function () {
           return fetchAll(slice, function (d) { progress(done + d, items.length, partNo ? 'Part ' + (partNo + 1) + ':' : 'Getting'); })
             .then(function (got) {
-              done += slice.length; failed += got.failed;
+              done += slice.length; failed += got.failed; plain += got.plain;
               return got.files.reduce(function (p, f) {
                 return p.then(function () { return bytesOf(f.blob); }).then(function (bytes) {
                   if (part.length && (part.length >= PART || partBytes + bytes.length > PART_BYTES)) flush(false);
@@ -185,20 +185,20 @@
         });
       })(items.slice(i, i + BATCH));
     }
-    return chain.then(function () { flush(true); return { saved: saved, failed: failed, how: 'zip' }; });
+    return chain.then(function () { flush(true); return { saved: saved, failed: failed, plain: plain, how: 'zip' }; });
   }
 
   function asDownloads(got, zipName, progress) {
     if (got.files.length === 1) {
       download(got.files[0].blob, got.files[0].name);
-      return Promise.resolve({ saved: 1, failed: got.failed, how: 'file' });
+      return Promise.resolve({ saved: 1, failed: got.failed, plain: got.plain, how: 'file' });
     }
     return Promise.all(got.files.map(function (f) {
       return bytesOf(f.blob).then(function (b) { return { name: f.name, bytes: b, date: f.date }; });
     })).then(function (entries) {
       if (entries.length) download(zip(entries), zipName + '.zip');
       progress(entries.length, entries.length, 'Saved');
-      return { saved: entries.length, failed: got.failed, how: 'zip' };
+      return { saved: entries.length, failed: got.failed, plain: got.plain, how: 'zip' };
     });
   }
 
@@ -275,12 +275,28 @@
     }
     g.restore();
   }
-  function disposable(blob, date) {
+  // One photo at a time, with each canvas emptied as soon as it's done:
+  // phones (iPhones especially) cap canvas memory, and past the cap a
+  // render fails. A failed render is tried once more, then reported.
+  var lookQueue = Promise.resolve();
+  function disposable(blob, date, opts) {
+    var job = lookQueue.then(function () {
+      return renderLook(blob, date, opts || {}).catch(function () {
+        return new Promise(function (ok) { setTimeout(ok, 500); }).then(function () { return renderLook(blob, date, opts || {}); });
+      });
+    });
+    lookQueue = job.catch(function () {});
+    return job;
+  }
+  // opts.maxEdge: render smaller (the gallery's thumbnails).
+  function renderLook(blob, date, opts) {
     var decode = window.createImageBitmap ? createImageBitmap(blob).catch(function () { return viaImage(blob); }) : viaImage(blob);
     return decode.then(function (img) {
-      var c = document.createElement('canvas'), W = c.width = img.width, H = c.height = img.height;
+      var k = opts.maxEdge ? Math.min(1, opts.maxEdge / Math.max(img.width, img.height)) : 1;
+      var c = document.createElement('canvas'), W = c.width = Math.round(img.width * k), H = c.height = Math.round(img.height * k);
       var g = c.getContext('2d');
-      g.drawImage(img, 0, 0);
+      if (!g) throw new Error('no canvas');
+      g.drawImage(img, 0, 0, W, H);
       if (img.close) img.close();
       // Film colour: warm, a little faded, a touch more saturated; luma grain.
       var px = g.getImageData(0, 0, W, H), d = px.data, seed = 1234567;
@@ -312,7 +328,13 @@
       drawStamp(g, text, x, y, h);
       g.shadowBlur = h * 0.15; g.fillStyle = '#ffb347';
       drawStamp(g, text, x, y, h);
-      return new Promise(function (ok, no) { c.toBlob(function (out) { out ? ok(out) : no(new Error('encode')); }, 'image/jpeg', 0.92); });
+      px = null;
+      return new Promise(function (ok, no) {
+        c.toBlob(function (out) {
+          c.width = c.height = 0;   // hand the memory back now, not at GC
+          out ? ok(out) : no(new Error('encode'));
+        }, 'image/jpeg', 0.92);
+      });
     });
   }
 
